@@ -120,7 +120,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.5</button>
+    <button class="ver" id="verBtn" type="button">v0.6</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -366,7 +366,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.5';
+const APP_VERSION = '0.6';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -1136,7 +1136,7 @@ function fillSchemaTxt(){
        + 'Nur am Äquator steht er genau parallel zur Achse – dort halbiert die Grenze jede Bahn.';
   }
   $('schemaTxt').innerHTML = t;
-  $('shapeHint').textContent = dose ? 'nur diese Karte' : '';
+  $('shapeHint').textContent = dose ? 'Balken unten zeigt die Dose' : '';
 }
 
 /* Sonnenhöhe im Tagesverlauf */
@@ -1308,11 +1308,12 @@ function renderHeader(){
   $('seasonTxt').textContent = hemi + (state.lat < 0 ? ' (Süd)' : ' (Nord)');
   document.querySelectorAll('#latChips .chip').forEach(c => c.classList.toggle('act', Math.abs(parseFloat(c.dataset.lat) - state.lat) < 0.01));
   /* Tag/Nacht-Balken */
-  const dl = AST.dayLen(state.lat, sun.dec), nl = 24 - dl;
+  const doseBar = state.shape === 'dose' && state.tab === 'tag';     /* Balken folgt der Dose, solange sie gewaehlt ist */
+  const dl = doseBar ? dayLenDose() : AST.dayLen(state.lat, sun.dec), nl = 24 - dl;
   $('dnNight').style.flex = '0 0 ' + (nl/24*100).toFixed(2) + '%'; $('dnDay').style.flex = '0 0 ' + (dl/24*100).toFixed(2) + '%';
   $('dnNight').textContent = nl >= 24 ? 'Polarnacht · 24 h Nacht' : nl > 2.5 ? 'Nacht ' + fmt(nl, 1) + ' h' : nl > 0 ? fmt(nl, 1) : '';
   $('dnDay').textContent = dl >= 24 ? 'Mitternachtssonne · 24 h Tag' : dl > 2.5 ? 'Tag ' + fmt(dl, 1) + ' h' : dl > 0 ? fmt(dl, 1) : '';
-  $('dnL').textContent = 'φ = ' + latTxt(state.lat) + ' · ' + doyLabel(Math.round(state.doy));
+  $('dnL').textContent = (doseBar ? 'Dosenwand, jede Höhe' : 'φ = ' + latTxt(state.lat)) + ' · ' + doyLabel(Math.round(state.doy));
   $('dnR').textContent = 'Tag ' + hm(dl).replace(':', ' h ') + ' min · Nacht ' + hm(nl).replace(':', ' h ') + ' min';
 }
 function render(){
