@@ -120,7 +120,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.2</button>
+    <button class="ver" id="verBtn" type="button">v0.3</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -162,6 +162,23 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
     <p>Die Erdachse zeigt im Raum <b>immer in dieselbe Richtung</b> (auf dem Bild: nach oben). Nur weil die Erde um die Sonne
     wandert, ist mal die Nord-, mal die Südhalbkugel der Sonne zugeneigt. Der Abstand zur Sonne schwankt nur um 3,4 %
     und ist nächstgelegen im Nordwinter – er macht nicht die Jahreszeiten.</p>
+    <details><summary>Eiert die Achse?</summary>
+    <p>Im Bild scheint die Achse hin und her zu kippen, wenn man das Jahr abspielt. Das ist ein
+    <b>Blickwinkel-Effekt</b>: In der Seitenansicht und im Globus wandert der Betrachter mit der Sonne mit.
+    Im Raum steht die Achse innerhalb eines Jahres praktisch still.</p>
+    <p>Echte Bewegungen gibt es, aber sie sind langsam oder winzig:</p>
+    <div class="kv">
+      <div><span>Präzession (Kreisel)</span><span>25 772 Jahre</span></div>
+      <div><span>Nutation (Mond)</span><span>18,6 Jahre, ±9,2″</span></div>
+      <div><span>Polbewegung (Chandler)</span><span>433 Tage, wenige Meter</span></div>
+      <div><span>Schiefe ε nimmt ab</span><span>47″ je Jahrhundert</span></div>
+      <div><span>ε-Zyklus (Milanković)</span><span>41 000 Jahre, 22,1°–24,5°</span></div>
+    </div>
+    <p>Präzession dreht die Achse auf einem Kegel mit 23,4° Halbwinkel: In rund 13 000 Jahren zeigt der
+    Nordpol auf Wega statt auf den Polarstern. Für die Jahreszeiten eines einzelnen Jahres ist all das
+    ohne Bedeutung. Diese App rechnet nur die langsame Abnahme von ε mit; Nutation und Polbewegung
+    bleiben weg, sie liegen unter 0,01°.</p>
+    </details>
   </div>
   <div class="card">
     <h2>Seitenansicht in der Bahnebene <span class="r">Sonne links, Nord oben</span></h2>
@@ -220,6 +237,32 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
 
 <!-- ============ TAG & NACHT ============ -->
 <section id="sec-tag">
+  <div class="card">
+    <h2>Schnittbild mit Winkeln <span class="r">Schnitt längs der Achse, Sonne links</span></h2>
+    <div class="btnrow" id="shapeChips" style="margin-bottom:8px">
+      <button class="chip act" data-s="kugel" type="button">Kugel</button>
+      <button class="chip" data-s="dose" type="button">Dose</button>
+      <span class="hint" id="shapeHint" style="align-self:center"></span>
+    </div>
+    <canvas id="cvSchema"></canvas>
+    <p id="schemaTxt"></p>
+    <details><summary>Was im Bild steht</summary>
+    <p><b>M</b> ist der Mittelpunkt des Körpers. Er liegt immer in der Mitte, auch wenn gekippt wird –
+    Kippen dreht den Körper um M, es verschiebt M nicht. Die <b>Tag-Nacht-Grenze</b> ist die Ebene durch M
+    senkrecht zur Sonnenrichtung (im Bild die senkrechte gestrichelte Linie). Beleuchtet ist alles links davon.
+    Genau die Hälfte des Körpers liegt im Licht, immer.</p>
+    <p>Die <b>Achse</b> ist um δ gegen diese Ebene gekippt. Ein Breitenkreis sitzt auf der Achse in der
+    <b>Höhe h</b> über M und steht senkrecht zur Achse. Weil die Grenzebene gekippt ist, trifft sie diesen
+    Kreis nicht in seiner Mitte C, sondern um <b>h · tan δ</b> daneben. Das ist der ganze Effekt.
+    Bei h = 0 ist dieser Abstand null – unabhängig von δ, unabhängig von der Form des Körpers.</p>
+    <p>Aus dem Abstand wird die Tageslänge über die <b>Draufsicht</b> rechts: dort teilt die Linie den Kreis
+    in einen gelben und einen blauen Bogen. Der gelbe Bogenanteil ist die Tageslänge. Verschiebt sich die
+    Linie nach rechts (zur Nachtseite), wird der gelbe Bogen länger.</p>
+    <p class="hint">Genau genommen liegt die Grenze wenige hundertstel Grad jenseits von M, weil die Sonne
+    größer als die Erde ist und ihre Strahlen nicht exakt parallel einfallen. Für die Tageslänge macht das
+    rund eine Minute aus und ist hier weggelassen.</p>
+    </details>
+  </div>
   <div class="card">
     <h2>Warum am Äquator immer 12 h <span class="r">Blick entlang der Drehachse</span></h2>
     <canvas id="cvPolar"></canvas>
@@ -319,7 +362,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.2';
+const APP_VERSION = '0.3';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -421,7 +464,7 @@ const now0 = new Date();
 const state = {
   year: now0.getUTCFullYear(),
   doy: 1, hour: 12, lat: LOC.lat, lon: LOC.lon,
-  tab: 'bahn', view: 'sun', yaw: 0, pitch: 0, playing: false
+  tab: 'bahn', view: 'sun', shape: 'kugel', yaw: 0, pitch: 0, playing: false
 };
 { const j0 = Date.UTC(state.year, 0, 1);
   state.doy = Math.floor((now0.getTime() - j0)/86400000) + 1;
@@ -834,6 +877,138 @@ function polyline(g, pts, color, width, dash){
   pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
 }
 
+/* Tageslaenge auf einem Zylinder gleicher Hoehe: Bahnradius konstant R statt R*cos(phi) */
+function dayLenDose(lat, dec){
+  const x = -Math.sin(lat*D2R)*Math.tan(dec*D2R);
+  const w = x <= -1 ? Math.PI : x >= 1 ? 0 : Math.acos(x);
+  return w*2*R2D/15;
+}
+
+/* Schnittbild laengs der Achse: Mittelpunkt, Grenzebene, Winkel delta und phi, Versatz h*tan(delta) */
+function drawSchema(){
+  const cv = $('cvSchema'), W = cv.parentElement.clientWidth - 24;
+  const S = setup(cv, clamp(W*0.94, 290, 370)); if (!S) return;
+  const { g, w, h: HH } = S, sun = sunNow();
+  const dr = sun.dec*D2R, td = Math.tan(dr), dose = state.shape === 'dose';
+  const lat = state.lat, lr = lat*D2R;
+  const cx = w*0.415, cy = HH*0.47, R = Math.min(w*0.235, HH*0.27);
+  const ax = [-Math.sin(dr), -Math.cos(dr)];      /* Richtung Nordpol bzw. Deckel */
+  const ex = [Math.cos(dr), -Math.sin(dr)];       /* senkrecht zur Achse, nach rechts */
+  const P = (a, b) => [cx + (a*ex[0] + b*ax[0])*R, cy + (a*ex[1] + b*ax[1])*R];
+  const ang = v => Math.atan2(v[1], v[0]);
+  const line = (p1, p2, col, wd, dash) => { g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = wd;
+    g.beginPath(); g.moveTo(p1[0], p1[1]); g.lineTo(p2[0], p2[1]); g.stroke(); g.setLineDash([]); };
+
+  /* Sonnenstrahlen von links */
+  const xE = cx - R - 12;
+  g.strokeStyle = 'rgba(255,200,87,.6)'; g.fillStyle = 'rgba(255,200,87,.8)'; g.lineWidth = 1.2;
+  if (xE > 24) for (let k = -1; k <= 1; k++){
+    const y = cy + k*R*0.62;
+    g.beginPath(); g.moveTo(4, y); g.lineTo(xE, y); g.stroke();
+    g.beginPath(); g.moveTo(xE + 7, y); g.lineTo(xE, y - 3.5); g.lineTo(xE, y + 3.5); g.closePath(); g.fill();
+  }
+  txt(g, 'Sonne', 4, 13, { color: C.sun, bold: true, size: 11.5 });
+
+  /* Koerper, Tagseite hell, Nachtseite dunkel */
+  const body = () => { g.beginPath();
+    if (dose){ const c = [P(-1,1), P(1,1), P(1,-1), P(-1,-1)];
+      g.moveTo(c[0][0], c[0][1]); for (let i = 1; i < 4; i++) g.lineTo(c[i][0], c[i][1]); g.closePath(); }
+    else g.arc(cx, cy, R, 0, 7); };
+  g.save(); body(); g.clip();
+  g.fillStyle = '#2d5party'.replace('party','587'); g.fillRect(0, 0, cx, HH);
+  g.fillStyle = '#0c1527'; g.fillRect(cx, 0, w - cx, HH);
+  g.restore();
+  body(); g.strokeStyle = 'rgba(120,170,230,.5)'; g.lineWidth = 1.5; g.stroke();
+
+  /* Grenzebene: senkrecht durch M */
+  line([cx, 16], [cx, HH - 26], 'rgba(232,238,249,.8)', 1.4, [4,3]);
+  txt(g, 'Grenzebene durch M', cx + 5, 12, { size: 10.5, color: C.mut });
+  txt(g, 'Tag ◀', cx - 7, HH - 24, { align: 'right', size: 11, color: C.sun, bold: true });
+  txt(g, '▶ Nacht', cx + 7, HH - 24, { align: 'left', size: 11, color: '#7f9bd6', bold: true });
+
+  /* Achse */
+  line(P(0, -1.30), P(0, 1.30), 'rgba(232,238,249,.75)', 1.5);
+  const nL = P(0, 1.44), sL = P(0, -1.44);
+  txt(g, dose ? 'oben' : 'N', nL[0], nL[1] + 4, { align: 'center', size: 11, bold: true, color: C.ink });
+  txt(g, dose ? 'unten' : 'S', sL[0], sL[1] + 4, { align: 'center', size: 11, bold: true, color: C.ink });
+  txt(g, 'Achse', P(0, 1.18)[0] - 10, P(0, 1.18)[1], { align: 'right', size: 10, color: C.mut });
+
+  /* Mittelkreis h = 0: Grenze trifft genau die Mitte */
+  line(P(-1, 0), [cx, cy], C.sun, 2.6); line([cx, cy], P(1, 0), '#3d5fa8', 2.6);
+  const eqL = [P(-0.55, 0)[0] + ax[0]*10, P(-0.55, 0)[1] + ax[1]*10];
+  txt(g, 'h = 0', eqL[0], eqL[1], { align: 'center', size: 10.5, color: '#cfe0ff', bold: true });
+
+  /* Breitenkreis phi: Hoehe b0, halbe Laenge La */
+  const b0 = Math.sin(lr), La = dose ? 1 : Math.cos(lr), t = b0*td;
+  const C0 = P(0, b0), T = P(t, b0), eigen = Math.abs(b0) > 0.02;
+  if (La > 0.02 && eigen){
+    line(P(-La, b0), T, C.sun, 3.8); line(T, P(La, b0), '#3d5fa8', 3.8);
+    g.beginPath(); g.arc(C0[0], C0[1], 3.2, 0, 7); g.fillStyle = C.ink; g.fill();
+    const up = b0 >= 0 ? 1 : -1;
+    txt(g, 'C', C0[0] + ax[0]*13*up, C0[1] + ax[1]*13*up + 4, { align: 'center', size: 11, color: C.ink, bold: true });
+    if (Math.abs(t)*R > 7){
+      const off = -14*up, o1 = [C0[0] + ax[0]*off, C0[1] + ax[1]*off], o2 = [T[0] + ax[0]*off, T[1] + ax[1]*off];
+      line(o1, o2, 'rgba(141,240,190,.95)', 1.8);
+      line([C0[0], C0[1]], o1, 'rgba(141,240,190,.45)', 1); line([T[0], T[1]], o2, 'rgba(141,240,190,.45)', 1);
+      txt(g, 'h·tan δ', o2[0] + ex[0]*8 + ax[0]*off*0.5, o2[1] + ex[1]*8 + ax[1]*off*0.5 + 4, { align: 'left', size: 10.5, color: C.loc, bold: true });
+    }
+  } else if (eigen){
+    g.beginPath(); g.arc(C0[0], C0[1], 4.5, 0, 7); g.strokeStyle = b0*sun.dec > 0 ? C.sun : '#3d5fa8'; g.lineWidth = 2.6; g.stroke();
+    txt(g, 'Pol', C0[0] + ex[0]*12, C0[1] + ex[1]*12 + 4, { align: 'left', size: 10.5, color: C.mut });
+  }
+  /* Hoehe h entlang der Achse */
+  if (Math.abs(b0) > 0.12){
+    const m = P(0, b0/2);
+    txt(g, 'h', m[0] - ex[0]*17, m[1] - ex[1]*17 + 4, { align: 'center', size: 12, color: C.ink, bold: true });
+  }
+  /* Mittelpunkt M */
+  g.beginPath(); g.arc(cx, cy, 4, 0, 7); g.fillStyle = C.ink; g.fill();
+  txt(g, 'M', cx - 7, cy + 15, { align: 'right', size: 11.5, bold: true, color: C.ink });
+
+  /* Winkel delta zwischen Senkrechter und Achse */
+  const oben = b0 < 0;                       /* delta-Bogen immer gegenueber von C */
+  const aDn = oben ? -Math.PI/2 : Math.PI/2;
+  const aAx = oben ? ang(ax) : ang([-ax[0], -ax[1]]), rD = R*0.60;
+  if (Math.abs(sun.dec) > 0.8){
+    const d1 = ((aAx - aDn) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+    g.beginPath(); g.arc(cx, cy, rD, aDn, aAx, d1 > Math.PI); g.strokeStyle = C.loc; g.lineWidth = 1.5; g.stroke();
+    const am = aDn + (d1 > Math.PI ? -(2*Math.PI - d1) : d1)/2;
+    txt(g, 'δ = ' + fmt(sun.dec, 1) + '°', cx + (rD + 18)*Math.cos(am), cy + (rD + 18)*Math.sin(am) + 4, { align: 'center', size: 11.5, color: C.loc, bold: true });
+  }
+  /* Winkel phi zwischen Mittelebene und Ortsrichtung (nur Kugel) */
+  if (!dose && Math.abs(lat) > 1.5 && Math.abs(lat) < 89){
+    const u = [Math.cos(lr)*ex[0] + Math.sin(lr)*ax[0], Math.cos(lr)*ex[1] + Math.sin(lr)*ax[1]];
+    line([cx, cy], [cx + u[0]*R, cy + u[1]*R], 'rgba(232,238,249,.4)', 1, [3,3]);
+    const a1 = ang(ex), a2 = ang(u), rP = R*0.38;
+    const d2 = ((a2 - a1) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+    g.beginPath(); g.arc(cx, cy, rP, a1, a2, d2 > Math.PI); g.strokeStyle = 'rgba(232,238,249,.8)'; g.lineWidth = 1.3; g.stroke();
+    const am2 = a1 + (d2 > Math.PI ? -(2*Math.PI - d2) : d2)/2;
+    txt(g, 'φ', cx + (rP + 12)*Math.cos(am2), cy + (rP + 12)*Math.sin(am2) + 4, { align: 'center', size: 12, color: C.ink, bold: true });
+  }
+
+  /* Draufsicht auf die Kreisbahn */
+  const mx = w*0.845, my = HH*0.40, rr = Math.min(w*0.132, HH*0.175);
+  const punkt = La <= 0.02;
+  const q = punkt ? (t > 0 ? 1 : -1) : clamp(t/La, -1, 1);
+  const aq = Math.acos(q), frac = 1 - aq/Math.PI;
+  txt(g, 'Draufsicht', mx, my - rr - 16, { align: 'center', size: 10.5, color: C.mut });
+  txt(g, 'auf die Bahn', mx, my - rr - 5, { align: 'center', size: 10.5, color: C.mut });
+  if (punkt){
+    g.beginPath(); g.arc(mx, my, 7, 0, 7); g.fillStyle = frac > 0.5 ? C.sun : '#3d5fa8'; g.fill();
+    txt(g, 'Bahn = ein Punkt', mx, my + 26, { align: 'center', size: 10.5, color: C.mut });
+  } else {
+    g.lineWidth = 3.2;
+    g.beginPath(); g.arc(mx, my, rr, aq, 2*Math.PI - aq); g.strokeStyle = C.sun; g.stroke();
+    g.beginPath(); g.arc(mx, my, rr, -aq, aq); g.strokeStyle = '#3d5fa8'; g.stroke();
+    const hq = Math.sqrt(Math.max(0, 1 - q*q))*rr;
+    line([mx + q*rr, my - hq], [mx + q*rr, my + hq], 'rgba(232,238,249,.85)', 1.4, [3,3]);
+    g.beginPath(); g.arc(mx, my, 2.5, 0, 7); g.fillStyle = C.ink; g.fill();
+  }
+  txt(g, fmt(frac*24, 1) + ' h Tag', mx, my + rr + 16, { align: 'center', size: 12, color: C.ink, bold: true });
+  txt(g, 'Bahnbreite ' + fmt(La, 2) + '·R', mx, my + rr + 29, { align: 'center', size: 10, color: C.mut });
+  txt(g, dose ? 'Dose: Bahnradius überall R' : 'Kugel: Bahnradius R·cos φ', 6, HH - 6, { size: 10.5, color: C.dim });
+}
+
 /* Blick entlang der Drehachse: Breitenkreise als Kreisbahnen, Schnittlinie der Tag-Nacht-Ebene */
 function drawPolar(){
   const cv = $('cvPolar'), W = cv.parentElement.clientWidth - 24, S = setup(cv, Math.min(W, 400)); if (!S) return;
@@ -913,6 +1088,27 @@ function drawPolar(){
       + '. Lichtanteil ½ ' + (frac >= 0.5 ? '+' : '−') + ' arcsin(' + fmt(x, 3) + ')/π = <b>' + fmt(frac, 3) + '</b> → <b>' + fmt(frac*24, 1) + ' h</b>. '
       + 'Zum Vergleich der Äquator in derselben Zeichnung: Linie durch die Mitte, 12,0 h.';
   $('polarTxt').innerHTML = t;
+}
+
+function fillSchemaTxt(){
+  const sun = sunNow(), lat = state.lat, dose = state.shape === 'dose';
+  const sp = Math.sin(lat*D2R), cp = Math.cos(lat*D2R), td = Math.tan(sun.dec*D2R);
+  const dK = AST.dayLen(lat, sun.dec), dD = dayLenDose(lat, sun.dec);
+  const nm = x => x >= 24 ? '24,0 h (Sonne geht nicht unter)' : x <= 0 ? '0,0 h (Sonne geht nicht auf)' : fmt(x, 1) + ' h';
+  let t = '<b>' + (dose ? 'Dose' : 'Kugel') + '</b>, δ = ' + fmt(sun.dec, 1) + '°, Höhe h = R·sin φ = ' + fmt(sp, 3) + '·R. ';
+  if (Math.abs(sp) < 0.006) t += 'h = 0: Versatz h·tan δ = <b>0</b>. Die Grenze trifft die Bahn in ihrer Mitte, gelber und blauer Bogen sind gleich lang: <b>12,0 h</b>. Das gilt für jedes δ und für beide Formen.';
+  else {
+    const off = sp*td, half = dose ? 1 : cp;
+    t += 'Versatz h·tan δ = ' + fmt(sp, 3) + ' · ' + fmt(td, 3) + ' = <b>' + fmt(off, 3) + '·R</b>, halbe Bahnbreite ' + fmt(half, 3) + '·R. ';
+    t += half < 0.01
+      ? 'Die Bahn ist auf einen <b>Punkt</b> geschrumpft: er liegt ganz auf einer Seite der Grenze, also <b>' + nm(dK) + '</b>.'
+      : 'Verhältnis ' + fmt(Math.abs(off/half), 3) + ' → <b>' + nm(dose ? dD : dK) + '</b>.';
+  }
+  t += '<br><br>Gleiche Höhe, gleiche Grenzebene, nur andere Form: <b>Kugel ' + nm(dK) + '</b>, <b>Dose ' + nm(dD) + '</b>. '
+     + 'Der Versatz ist in beiden Fällen derselbe – verschieden ist nur, wie breit die Bahn dort ist. '
+     + 'Deshalb ist nicht die Dicke die Ursache, sondern die Höhe: bei h = 0 sind beide bei 12,0 h.';
+  $('schemaTxt').innerHTML = t;
+  $('shapeHint').textContent = dose ? 'nur diese Karte' : '';
 }
 
 /* Sonnenhöhe im Tagesverlauf */
@@ -1095,7 +1291,7 @@ function render(){
   renderHeader();
   if (state.tab === 'bahn'){ drawOrbit(); drawSide(); fillOrbitKv(); }
   else if (state.tab === 'erde'){ drawGlobeMain(); fillLocKv(); drawStrip(); }
-  else if (state.tab === 'tag'){ drawPolar(); drawElev(); drawHeatDay(); drawDayYear(); }
+  else if (state.tab === 'tag'){ drawSchema(); fillSchemaTxt(); drawPolar(); drawElev(); drawHeatDay(); drawDayYear(); }
   else { fillRadKv(); drawRadLat(); drawHeatRad(); drawRadYear(); }
 }
 let raf = 0;
@@ -1153,6 +1349,8 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
   document.querySelectorAll('main section').forEach(s => s.classList.toggle('act', s.id === 'sec-' + state.tab));
   render();
 }));
+$('shapeChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; state.shape = b.dataset.s;
+  document.querySelectorAll('#shapeChips .chip').forEach(x => x.classList.toggle('act', x === b)); schedule(); });
 $('viewChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; state.view = b.dataset.v; state.yaw = 0; state.pitch = 0;
   document.querySelectorAll('#viewChips .chip').forEach(x => x.classList.toggle('act', x === b)); schedule(); });
 /* Globus drehen (Ziehen) */
