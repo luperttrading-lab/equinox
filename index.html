@@ -120,7 +120,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.4</button>
+    <button class="ver" id="verBtn" type="button">v0.5</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -254,7 +254,8 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
     <p>Die <b>Achse</b> ist um δ gegen diese Ebene gekippt. Ein Breitenkreis sitzt auf der Achse in der
     <b>Höhe h</b> über M und steht senkrecht zur Achse. Weil die Grenzebene gekippt ist, trifft sie diesen
     Kreis nicht in seiner Mitte C, sondern um <b>h · tan δ</b> daneben. Das ist der ganze Effekt.
-    Bei h = 0 ist dieser Abstand null – unabhängig von δ, unabhängig von der Form des Körpers.</p>
+    Bei h = 0 ist dieser Abstand null – unabhängig von δ.</p>
+    <p><b>Wichtig:</b> Die Grenze als Ebene durch M gilt nur für die Kugel. Allgemein ist ein Flächenstück hell, wenn es der Sonne zugewandt ist. Bei der Kugel zeigt jedes Flächenstück vom Mittelpunkt weg, deshalb fällt die Grenze dort auf die Ebene durch M. Bei der Dose zeigt die Wand überall quer zur Achse: Die Grenze läuft längs der Wand, jeder Wandring hat 12 h, der Deckel hat 24 h oder 0 h.</p>
     <p>Aus dem Abstand wird die Tageslänge über die <b>Draufsicht</b> rechts: dort teilt die Linie den Kreis
     in einen gelben und einen blauen Bogen. Der gelbe Bogenanteil ist die Tageslänge. Verschiebt sich die
     Linie nach rechts (zur Nachtseite), wird der gelbe Bogen länger.</p>
@@ -365,7 +366,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.4';
+const APP_VERSION = '0.5';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -881,11 +882,9 @@ function polyline(g, pts, color, width, dash){
 }
 
 /* Tageslaenge auf einem Zylinder gleicher Hoehe: Bahnradius konstant R statt R*cos(phi) */
-function dayLenDose(lat, dec){
-  const x = -Math.sin(lat*D2R)*Math.tan(dec*D2R);
-  const w = x <= -1 ? Math.PI : x >= 1 ? 0 : Math.acos(x);
-  return w*2*R2D/15;
-}
+/* Dosenwand: Die Oberflaeche zeigt ueberall senkrecht zur Achse (wie der Aequator),
+   also ist jeder Wandring genau zur Haelfte beleuchtet, auf jeder Hoehe. */
+function dayLenDose(){ return 12; }
 
 /* Schnittbild laengs der Achse: Mittelpunkt, Grenzebene, Winkel delta und phi, Versatz h*tan(delta) */
 function drawSchema(){
@@ -918,19 +917,36 @@ function drawSchema(){
       g.moveTo(c[0][0], c[0][1]); for (let i = 1; i < 4; i++) g.lineTo(c[i][0], c[i][1]); g.closePath(); }
     else g.arc(cx, cy, R, 0, 7); };
   g.save(); body(); g.clip();
-  g.fillStyle = '#2d5party'.replace('party','587'); g.fillRect(0, 0, cx, HH);
-  g.fillStyle = '#0c1527'; g.fillRect(cx, 0, w - cx, HH);
+  g.fillStyle = '#0c1527'; g.fillRect(0, 0, w, HH);
+  g.fillStyle = '#2d5587';
+  if (dose){ const q1 = P(0, 3), q2 = P(-3, 3), q3 = P(-3, -3), q4 = P(0, -3);
+    g.beginPath(); g.moveTo(q1[0], q1[1]); g.lineTo(q2[0], q2[1]); g.lineTo(q3[0], q3[1]); g.lineTo(q4[0], q4[1]); g.closePath(); g.fill(); }
+  else g.fillRect(0, 0, cx, HH);
   g.restore();
   body(); g.strokeStyle = 'rgba(120,170,230,.5)'; g.lineWidth = 1.5; g.stroke();
 
   /* Grenzebene: senkrecht durch M */
-  line([cx, 16], [cx, HH - 26], 'rgba(232,238,249,.8)', 1.4, [4,3]);
-  txt(g, 'Grenzebene durch M', cx + 5, 12, { size: 10.5, color: C.mut });
-  txt(g, 'Tag ◀', cx - 7, HH - 24, { align: 'right', size: 11, color: C.sun, bold: true });
-  txt(g, '▶ Nacht', cx + 7, HH - 24, { align: 'left', size: 11, color: '#7f9bd6', bold: true });
+  line([cx, 16], [cx, HH - 26], dose ? 'rgba(232,238,249,.28)' : 'rgba(232,238,249,.8)', 1.4, [4,3]);
+  txt(g, dose ? 'Kugel-Grenze (Vergleich)' : 'Grenzebene durch M', cx + 5, 12, { size: 10.5, color: dose ? C.dim : C.mut });
+  if (dose){ const tb = [P(0, -1.44)[0] + 34, HH - 24];
+    txt(g, 'Tag ◀', tb[0] - 7, tb[1], { align: 'right', size: 11, color: C.sun, bold: true });
+    txt(g, '▶ Nacht', tb[0] + 7, tb[1], { align: 'left', size: 11, color: '#7f9bd6', bold: true }); }
+  else {
+    txt(g, 'Tag ◀', cx - 7, HH - 24, { align: 'right', size: 11, color: C.sun, bold: true });
+    txt(g, '▶ Nacht', cx + 7, HH - 24, { align: 'left', size: 11, color: '#7f9bd6', bold: true }); }
 
   /* Achse */
   line(P(0, -1.30), P(0, 1.30), 'rgba(232,238,249,.75)', 1.5);
+  if (dose){
+    line(P(0, -1), P(0, 1), 'rgba(245,248,255,.95)', 2.4, [5,3]);
+    const sd = sun.dec > 0.3 ? 1 : sun.dec < -0.3 ? -1 : 0;
+    line(P(-1, 1), P(1, 1), sd > 0 ? C.sun : sd < 0 ? '#3d5fa8' : C.dim, 4);
+    line(P(-1, -1), P(1, -1), sd < 0 ? C.sun : sd > 0 ? '#3d5fa8' : C.dim, 4);
+    const dl = P(1.05, 1.02);
+    txt(g, 'Deckel ' + (sd > 0 ? '24 h' : sd < 0 ? '0 h' : 'streifend'), dl[0] + 4, dl[1], { size: 10.5, color: sd > 0 ? C.sun : '#7f9bd6', bold: true });
+    const gl = P(0.08, 0.62);
+    txt(g, 'Grenze der Wand', gl[0] + 6, gl[1], { size: 10.5, color: C.ink, bold: true });
+  }
   const nL = P(0, 1.44), sL = P(0, -1.44);
   txt(g, dose ? 'oben' : 'N', nL[0], nL[1] + 4, { align: 'center', size: 11, bold: true, color: C.ink });
   txt(g, dose ? 'unten' : 'S', sL[0], sL[1] + 4, { align: 'center', size: 11, bold: true, color: C.ink });
@@ -943,13 +959,13 @@ function drawSchema(){
 
   /* Breitenkreis phi: Hoehe b0, halbe Laenge La */
   const b0 = Math.sin(lr), La = dose ? 1 : Math.cos(lr), t = b0*td;
-  const C0 = P(0, b0), T = P(t, b0), eigen = Math.abs(b0) > 0.02;
+  const C0 = P(0, b0), T = dose ? C0 : P(t, b0), eigen = Math.abs(b0) > 0.02;
   if (La > 0.02 && eigen){
     line(P(-La, b0), T, C.sun, 3.8); line(T, P(La, b0), '#3d5fa8', 3.8);
     g.beginPath(); g.arc(C0[0], C0[1], 3.2, 0, 7); g.fillStyle = C.ink; g.fill();
     const up = b0 >= 0 ? 1 : -1;
     txt(g, 'C', C0[0] + ax[0]*13*up, C0[1] + ax[1]*13*up + 4, { align: 'center', size: 11, color: C.ink, bold: true });
-    if (Math.abs(t)*R > 7){
+    if (!dose && Math.abs(t)*R > 7){
       const off = -14*up, o1 = [C0[0] + ax[0]*off, C0[1] + ax[1]*off], o2 = [T[0] + ax[0]*off, T[1] + ax[1]*off];
       line(o1, o2, 'rgba(141,240,190,.95)', 1.8);
       line([C0[0], C0[1]], o1, 'rgba(141,240,190,.45)', 1); line([T[0], T[1]], o2, 'rgba(141,240,190,.45)', 1);
@@ -992,7 +1008,7 @@ function drawSchema(){
   /* Draufsicht auf die Kreisbahn */
   const mx = w*0.845, my = HH*0.40, rr = Math.min(w*0.132, HH*0.175);
   const punkt = La <= 0.02;
-  const q = punkt ? (t > 0 ? 1 : -1) : clamp(t/La, -1, 1);
+  const q = dose ? 0 : punkt ? (t > 0 ? 1 : -1) : clamp(t/La, -1, 1);
   const aq = Math.acos(q), frac = 1 - aq/Math.PI;
   txt(g, 'Draufsicht', mx, my - rr - 16, { align: 'center', size: 10.5, color: C.mut });
   txt(g, 'auf die Bahn', mx, my - rr - 5, { align: 'center', size: 10.5, color: C.mut });
@@ -1096,20 +1112,29 @@ function drawPolar(){
 function fillSchemaTxt(){
   const sun = sunNow(), lat = state.lat, dose = state.shape === 'dose';
   const sp = Math.sin(lat*D2R), cp = Math.cos(lat*D2R), td = Math.tan(sun.dec*D2R);
-  const dK = AST.dayLen(lat, sun.dec), dD = dayLenDose(lat, sun.dec);
+  const dK = AST.dayLen(lat, sun.dec);
   const nm = x => x >= 24 ? '24,0 h (Sonne geht nicht unter)' : x <= 0 ? '0,0 h (Sonne geht nicht auf)' : fmt(x, 1) + ' h';
-  let t = '<b>' + (dose ? 'Dose' : 'Kugel') + '</b>, δ = ' + fmt(sun.dec, 1) + '°, Höhe h = R·sin φ = ' + fmt(sp, 3) + '·R. ';
-  if (Math.abs(sp) < 0.006) t += 'h = 0: Versatz h·tan δ = <b>0</b>. Die Grenze trifft die Bahn in ihrer Mitte, gelber und blauer Bogen sind gleich lang: <b>12,0 h</b>. Das gilt für jedes δ und für beide Formen.';
-  else {
-    const off = sp*td, half = dose ? 1 : cp;
-    t += 'Versatz h·tan δ = ' + fmt(sp, 3) + ' · ' + fmt(td, 3) + ' = <b>' + fmt(off, 3) + '·R</b>, halbe Bahnbreite ' + fmt(half, 3) + '·R. ';
-    t += half < 0.01
-      ? 'Die Bahn ist auf einen <b>Punkt</b> geschrumpft: er liegt ganz auf einer Seite der Grenze, also <b>' + nm(dK) + '</b>.'
-      : 'Verhältnis ' + fmt(Math.abs(off/half), 3) + ' → <b>' + nm(dose ? dD : dK) + '</b>.';
+  let t;
+  if (dose){
+    const lid = sun.dec > 0.3 ? '24 h Licht' : sun.dec < -0.3 ? '0 h' : 'streifendes Licht';
+    t = '<b>Dose</b>, δ = ' + fmt(sun.dec, 1) + '°. Die Wand zeigt auf jeder Höhe senkrecht zur Achse – genau wie der Boden am Äquator. '
+      + 'Deshalb ist jeder Wandring genau zur Hälfte hell: <b>12,0 h</b>, egal in welcher Höhe. Die Grenze läuft als gerade Linie längs der Wand, '
+      + 'im Schnittbild fällt sie auf die Achse. Der Deckel zeigt in Achsrichtung, wie der Boden am Pol: <b>' + lid + '</b>.'
+      + '<br><br>Zum Vergleich die Kugel auf gleicher Höhe: <b>' + nm(dK) + '</b>. '
+      + 'Entscheidend ist also nicht die Höhe und nicht die Dicke, sondern <b>wie die Oberfläche zur Achse steht</b>.';
+  } else {
+    t = '<b>Kugel</b>, δ = ' + fmt(sun.dec, 1) + '°, Höhe h = R·sin φ = ' + fmt(sp, 3) + '·R. ';
+    if (Math.abs(sp) < 0.006) t += 'h = 0: Versatz h·tan δ = <b>0</b>. Die Grenze trifft die Bahn in ihrer Mitte, gelber und blauer Bogen sind gleich lang: <b>12,0 h</b>, für jedes δ.';
+    else {
+      const off = sp*td;
+      t += 'Versatz h·tan δ = ' + fmt(sp, 3) + ' · ' + fmt(td, 3) + ' = <b>' + fmt(off, 3) + '·R</b>, halbe Bahnbreite ' + fmt(cp, 3) + '·R. ';
+      t += cp < 0.01
+        ? 'Die Bahn ist auf einen <b>Punkt</b> geschrumpft: er liegt ganz auf einer Seite der Grenze, also <b>' + nm(dK) + '</b>.'
+        : 'Verhältnis ' + fmt(Math.abs(off/cp), 3) + ' → <b>' + nm(dK) + '</b>.';
+    }
+    t += '<br><br>Hinter der Rechnung steckt: Auf der Kugel ist der Boden bei der Breite φ um φ gegen die Achse geneigt. '
+       + 'Nur am Äquator steht er genau parallel zur Achse – dort halbiert die Grenze jede Bahn.';
   }
-  t += '<br><br>Gleiche Höhe, gleiche Grenzebene, nur andere Form: <b>Kugel ' + nm(dK) + '</b>, <b>Dose ' + nm(dD) + '</b>. '
-     + 'Der Versatz ist in beiden Fällen derselbe – verschieden ist nur, wie breit die Bahn dort ist. '
-     + 'Deshalb ist nicht die Dicke die Ursache, sondern die Höhe: bei h = 0 sind beide bei 12,0 h.';
   $('schemaTxt').innerHTML = t;
   $('shapeHint').textContent = dose ? 'nur diese Karte' : '';
 }
