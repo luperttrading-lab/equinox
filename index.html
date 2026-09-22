@@ -120,7 +120,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.3</button>
+    <button class="ver" id="verBtn" type="button">v0.4</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -224,7 +224,7 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
   <div class="card">
     <h2>Am Ort <span class="r">Wettenberg 50,61° N · 8,65° O – Breite aus dem Regler</span></h2>
     <div class="kv" id="kvLoc"></div>
-    <p class="hint">Auf-/Untergang geometrisch (Sonnenmitte am mathematischen Horizont, ohne Refraktion); tatsächliche Zeiten ≈ 4 min früher/später.</p>
+    <p class="hint">Auf-/Untergang geometrisch (Sonnenmitte am mathematischen Horizont). Beobachtet geht die Sonne früher auf und später unter, weil der obere Sonnenrand zählt und die Luft das Licht um den Horizont biegt: in Wettenberg 5–7 min je Ereignis, am Äquator gut 3 min.</p>
   </div>
   <div class="card">
     <h2>Die vier Kardinaltage, gesehen von der Sonne</h2>
@@ -258,9 +258,12 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
     <p>Aus dem Abstand wird die Tageslänge über die <b>Draufsicht</b> rechts: dort teilt die Linie den Kreis
     in einen gelben und einen blauen Bogen. Der gelbe Bogenanteil ist die Tageslänge. Verschiebt sich die
     Linie nach rechts (zur Nachtseite), wird der gelbe Bogen länger.</p>
-    <p class="hint">Genau genommen liegt die Grenze wenige hundertstel Grad jenseits von M, weil die Sonne
-    größer als die Erde ist und ihre Strahlen nicht exakt parallel einfallen. Für die Tageslänge macht das
-    rund eine Minute aus und ist hier weggelassen.</p>
+    <p class="hint">Ganz genau ist die Kante nicht die Ebene durch M. Weil die Sonne nicht unendlich weit weg ist,
+    liegt die Grenze für die Sonnenmitte 8,8 Bogensekunden zur Sonne hin – vernachlässigbar. Deutlich mehr macht aus,
+    dass die Sonne eine Scheibe von 0,27° Radius ist und die Luft das Licht um rund 0,57° um den Horizont biegt:
+    Es ist noch 0,83° jenseits der gezeichneten Kante hell. Der beobachtete Tag dauert dadurch am Äquator 12 h 7 min statt 12 h,
+    in Wettenberg 10 bis 14 min länger als gezeichnet. Am Prinzip ändert das nichts: Auch mit diesem Streifen schwankt der
+    Äquator übers Jahr nur zwischen 12 h 6,7 und 12 h 7,3 min.</p>
     </details>
   </div>
   <div class="card">
@@ -362,7 +365,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.3';
+const APP_VERSION = '0.4';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
