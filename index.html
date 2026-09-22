@@ -101,6 +101,12 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 .strip .c b{display:block;color:var(--ink);font-weight:600;font-size:11.5px}
 .strip canvas{width:100%;display:block;margin-bottom:3px}
 #hourRow{margin-top:2px}
+/* ---------- Tag/Nacht-Balken (fest unten) ---------- */
+#dnWrap{flex:none;padding:6px max(14px,calc(50% - 380px)) calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg0)}
+#dnHead{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:3px}
+#dnBar{display:flex;height:22px;border-radius:7px;overflow:hidden;border:1px solid var(--line);font-size:11.5px;font-weight:600}
+#dnBar div{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;transition:flex-basis .15s}
+#dnNight{background:#3d5fa8;color:#e8eef9} #dnDay{background:var(--sun);color:#1a1204}
 .hint{font-size:12px;color:var(--dim);margin-top:4px}
 </style>
 </head>
@@ -114,7 +120,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.1</button>
+    <button class="ver" id="verBtn" type="button">v0.2</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -215,6 +221,20 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
 <!-- ============ TAG & NACHT ============ -->
 <section id="sec-tag">
   <div class="card">
+    <h2>Warum am Äquator immer 12 h <span class="r">Blick entlang der Drehachse</span></h2>
+    <canvas id="cvPolar"></canvas>
+    <div class="btnrow" style="margin-top:6px;align-items:center">
+      <button class="ibtn" id="btnDay" type="button">Tag abspielen (24 h)</button>
+      <span class="hint" id="polarHint"></span>
+    </div>
+    <p id="polarTxt"></p>
+    <p>Jeder Breitenkreis ist eine <b>Kreisbahn um die Drehachse</b>; ein Ort läuft sie in 24 h einmal ab. Beleuchtet ist alles
+    rechts der Schnittlinie. Die Tag-Nacht-Grenze ist eine Ebene <b>durch den Erdmittelpunkt</b>, um δ gegen die Achse gekippt.
+    Der Äquator ist der einzige Breitenkreis, dessen Mittelpunkt der Erdmittelpunkt ist – also läuft seine Schnittlinie
+    <b>immer durch seinen Mittelpunkt</b> und halbiert ihn, egal wie die Ebene gekippt ist. Jeder andere Kreis hat seinen
+    Mittelpunkt auf der Achse <b>oberhalb</b> des Erdmittelpunkts; dort ist die gekippte Ebene schon um sin φ · tan δ zur Seite gewandert.</p>
+  </div>
+  <div class="card">
     <h2>Sonnenhöhe im Tagesverlauf <span class="r">wahre Sonnenzeit</span></h2>
     <canvas id="cvElev"></canvas>
     <div class="legend">
@@ -290,11 +310,16 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 </section>
 </main>
 
+<div id="dnWrap">
+  <div id="dnHead"><span id="dnL">–</span><span id="dnR">–</span></div>
+  <div id="dnBar"><div id="dnNight"></div><div id="dnDay"></div></div>
+</div>
+
 <script id="world-land" type="application/json">[[[-45.2,-78.0],[-43.3,-80.0],[-54.2,-80.6],[-48.7,-78.0],[-45.2,-78.0]],[[-68.5,-71.0],[-68.8,-72.2],[-71.1,-72.5],[-75.0,-72.1],[-73.9,-71.3],[-72.1,-71.2],[-70.3,-68.9],[-68.5,-71.0]],[[-58.6,-64.2],[-62.0,-64.8],[-62.1,-66.2],[-65.7,-68.0],[-61.8,-70.7],[-60.8,-73.7],[-70.6,-76.6],[-77.2,-76.7],[-73.7,-77.9],[-78.0,-79.2],[-58.2,-83.2],[-28.5,-80.3],[-29.7,-79.3],[-35.6,-79.5],[-35.3,-78.1],[-17.5,-75.1],[-15.7,-74.5],[-16.5,-73.9],[-15.4,-73.1],[-6.9,-70.9],[-0.2,-71.6],[7.7,-69.9],[10.8,-70.8],[13.4,-70.0],[27.1,-70.5],[33.9,-68.5],[38.6,-69.8],[54.5,-65.8],[61.4,-68.0],[68.9,-67.9],[69.7,-69.2],[67.8,-70.3],[69.1,-70.7],[67.9,-71.9],[69.9,-72.3],[73.9,-69.9],[88.0,-66.2],[99.7,-67.2],[102.8,-65.6],[106.2,-66.9],[113.6,-65.9],[117.4,-66.9],[132.9,-66.4],[135.1,-65.3],[137.5,-67.0],[145.5,-66.9],[148.8,-68.4],[170.5,-71.4],[171.1,-72.1],[169.3,-73.7],[163.6,-76.2],[164.7,-78.2],[167.0,-78.8],[161.8,-79.2],[159.8,-80.9],[169.4,-83.8],[180,-84.7],[180,-90],[-180,-90],[-180,-84.7],[-179.1,-84.1],[-143.1,-85.0],[-153.6,-83.7],[-152.9,-82.0],[-156.8,-81.1],[-146.4,-80.3],[-155.3,-79.1],[-158.4,-76.9],[-151.3,-77.4],[-146.1,-76.5],[-146.2,-75.4],[-144.9,-75.2],[-113.9,-73.7],[-100.6,-75.3],[-103.7,-72.6],[-74.9,-73.9],[-67.4,-72.5],[-68.5,-69.7],[-67.7,-67.3],[-63.0,-64.6],[-58.6,-64.2]],[[-67.8,-53.9],[-65.0,-54.7],[-68.1,-55.6],[-72.3,-54.5],[-74.7,-52.8],[-71.1,-54.1],[-69.3,-52.5],[-67.8,-53.9]],[[145.4,-40.8],[148.3,-40.9],[147.6,-42.9],[146.0,-43.5],[145.4,-40.8]],[[173.0,-40.9],[174.2,-41.3],[173.1,-43.9],[169.3,-46.6],[166.5,-45.9],[173.0,-40.9]],[[174.6,-36.2],[176.8,-37.9],[178.5,-37.7],[175.2,-41.7],[173.8,-39.5],[174.7,-37.4],[172.6,-34.5],[174.6,-36.2]],[[50.1,-13.6],[50.4,-15.7],[47.1,-24.9],[44.0,-25.0],[43.4,-21.3],[44.4,-16.2],[47.7,-14.6],[49.2,-12.0],[50.1,-13.6]],[[143.6,-13.8],[145.4,-15.0],[146.4,-19.0],[153.1,-26.1],[152.9,-31.6],[149.4,-37.8],[146.3,-39.0],[145.0,-37.9],[143.6,-38.8],[140.6,-38.0],[138.2,-34.4],[136.8,-35.3],[137.8,-32.9],[136.0,-34.9],[134.3,-32.6],[131.3,-31.5],[116.6,-35.0],[115.0,-34.2],[115.8,-32.2],[114.6,-28.8],[113.3,-26.1],[114.2,-26.3],[113.4,-24.4],[114.1,-21.8],[120.9,-19.7],[125.7,-14.2],[129.6,-15.0],[132.4,-11.1],[136.5,-11.9],[135.5,-15.0],[140.2,-17.7],[142.1,-11.0],[143.6,-13.8]],[[108.6,-6.8],[115.7,-8.4],[110.6,-8.1],[105.4,-6.9],[106.1,-5.9],[108.6,-6.8]],[[134.1,-1.2],[135.5,-3.4],[138.3,-1.7],[144.6,-3.9],[150.8,-10.3],[147.9,-10.1],[144.7,-7.6],[142.6,-9.3],[137.6,-8.4],[138.7,-7.3],[137.9,-5.4],[133.0,-4.1],[132.0,-2.8],[133.7,-2.2],[130.5,-0.9],[134.1,-1.2]],[[125.2,1.4],[120.2,0.2],[120.9,-1.4],[123.3,-0.6],[121.5,-1.9],[123.2,-5.3],[121.5,-4.6],[121.0,-2.6],[120.4,-5.5],[119.4,-5.4],[118.8,-2.8],[120.0,0.6],[125.2,1.4]],[[105.8,-5.9],[102.6,-4.2],[95.4,5.0],[97.5,5.2],[103.8,0.1],[103.4,-0.7],[106.1,-3.1],[105.8,-5.9]],[[117.9,1.8],[119.0,0.9],[117.8,0.8],[116.1,-4.0],[114.9,-4.1],[110.2,-2.9],[109.0,0.4],[109.7,2.0],[111.2,1.9],[117.1,6.9],[119.2,5.4],[117.3,3.2],[117.9,1.8]],[[126.4,8.4],[125.4,5.6],[122.8,7.5],[125.4,9.8],[126.4,8.4]],[[81.2,6.2],[79.9,6.8],[80.1,9.8],[81.8,7.5],[81.2,6.2]],[[121.3,18.5],[122.5,17.1],[121.7,14.3],[124.0,13.8],[124.1,12.5],[123.3,13.0],[120.1,15.0],[121.3,18.5]],[[-72.6,19.9],[-69.2,19.3],[-68.7,18.2],[-70.7,18.4],[-71.4,17.6],[-74.5,18.3],[-72.3,18.7],[-73.4,19.6],[-72.6,19.9]],[[-79.7,22.8],[-74.2,20.3],[-77.8,19.9],[-77.1,20.4],[-78.7,21.6],[-82.8,22.7],[-85.0,21.9],[-82.3,23.2],[-79.7,22.8]],[[141.0,37.1],[140.3,35.1],[135.8,33.5],[135.1,34.6],[131.0,33.9],[132.0,33.1],[130.7,31.0],[129.4,33.3],[139.4,38.2],[140.3,41.2],[141.9,40.0],[141.0,37.1]],[[143.9,44.2],[145.3,44.4],[145.5,43.3],[143.2,42.0],[141.6,42.7],[141.1,41.6],[139.8,42.6],[142.0,45.6],[143.9,44.2]],[[-56.1,50.7],[-56.8,49.8],[-53.1,48.7],[-53.1,46.7],[-54.2,47.8],[-55.4,46.9],[-59.3,47.6],[-57.4,50.7],[-55.9,51.6],[-56.1,50.7]],[[143.6,50.7],[144.7,49.0],[143.2,49.3],[142.6,47.9],[143.5,46.1],[142.1,46.0],[141.9,48.9],[142.2,54.2],[143.6,50.7]],[[-6.8,52.3],[-10.0,51.8],[-8.3,54.7],[-5.7,54.6],[-6.8,52.3]],[[-3.0,58.6],[-4.1,57.6],[-2.0,57.7],[-3.1,56.0],[1.7,52.7],[1.4,51.3],[-5.2,50.0],[-3.4,51.4],[-5.3,52.0],[-4.2,52.3],[-4.6,53.5],[-2.9,54.0],[-6.1,56.8],[-5.0,58.6],[-3.0,58.6]],[[-14.5,66.5],[-13.6,65.1],[-18.7,63.5],[-24.0,64.9],[-22.2,65.1],[-24.3,65.6],[-23.7,66.3],[-14.5,66.5]],[[-175.0,66.6],[-169.9,66.0],[-172.5,65.4],[-173.0,64.3],[-176.0,64.9],[-178.7,66.1],[-180,65.0],[-180,69.0],[-175.0,66.6]],[[-90.5,69.5],[-90.6,68.5],[-89.2,69.3],[-87.4,67.2],[-85.5,69.9],[-82.6,69.7],[-81.3,69.2],[-81.3,67.6],[-85.8,66.6],[-93.2,62.0],[-94.7,58.9],[-92.3,57.1],[-82.3,55.1],[-82.1,53.3],[-79.9,51.2],[-78.6,52.6],[-79.8,54.7],[-76.5,56.5],[-78.5,58.8],[-77.3,59.9],[-78.1,62.3],[-73.8,62.4],[-69.6,61.1],[-69.3,59.0],[-67.6,58.2],[-64.6,60.3],[-61.8,56.3],[-57.3,54.6],[-55.7,52.1],[-60.0,50.2],[-66.4,50.2],[-71.1,46.8],[-65.1,49.2],[-64.5,46.2],[-61.5,45.9],[-60.5,47.0],[-59.8,45.9],[-65.4,43.5],[-66.2,44.5],[-64.4,45.3],[-67.1,45.1],[-70.7,43.0],[-70.0,41.6],[-75.5,39.5],[-75.9,37.2],[-76.3,39.2],[-75.7,35.6],[-81.3,31.4],[-80.4,25.2],[-84.1,30.1],[-93.8,29.7],[-96.6,28.3],[-97.9,22.4],[-96.3,19.3],[-94.4,18.1],[-92.0,18.7],[-90.3,21.0],[-87.1,21.5],[-88.9,15.9],[-83.4,15.3],[-83.8,11.1],[-81.4,8.8],[-79.6,9.6],[-76.8,8.6],[-74.9,11.1],[-71.8,12.4],[-71.7,9.1],[-69.9,12.2],[-68.2,10.6],[-61.9,10.7],[-62.4,9.9],[-57.1,6.0],[-51.3,4.2],[-50.4,-0.1],[-44.9,-1.6],[-44.6,-2.7],[-40.0,-2.9],[-35.6,-5.1],[-34.7,-7.3],[-38.7,-13.1],[-40.9,-21.9],[-47.6,-24.9],[-48.9,-28.7],[-53.8,-34.4],[-58.4,-33.9],[-56.8,-36.9],[-59.2,-38.7],[-62.3,-38.8],[-62.1,-40.7],[-65.1,-41.1],[-63.8,-42.0],[-65.6,-45.0],[-67.3,-45.6],[-65.6,-47.2],[-69.1,-50.7],[-68.2,-52.3],[-71.4,-53.9],[-75.3,-51.6],[-75.6,-48.7],[-74.1,-46.9],[-75.6,-46.6],[-72.7,-42.4],[-74.3,-43.2],[-73.6,-37.2],[-71.4,-32.4],[-70.2,-19.8],[-71.5,-17.4],[-76.0,-14.6],[-81.2,-6.1],[-79.8,-2.7],[-80.9,-1.1],[-77.1,3.8],[-78.2,8.3],[-79.6,8.9],[-80.9,7.2],[-85.7,9.9],[-87.5,13.3],[-103.5,18.3],[-113.9,31.6],[-114.8,31.8],[-114.7,30.2],[-109.4,23.4],[-112.2,24.7],[-115.1,27.7],[-114.2,28.6],[-117.3,33.0],[-120.6,34.6],[-124.4,40.3],[-124.7,48.2],[-122.6,47.1],[-122.8,49.0],[-127.4,50.8],[-134.1,58.1],[-147.1,60.9],[-151.7,59.2],[-150.6,61.3],[-158.4,56.0],[-164.8,54.4],[-157.7,57.6],[-157.0,58.9],[-162.0,58.7],[-161.9,59.6],[-166.1,61.5],[-164.6,63.1],[-160.8,63.8],[-160.8,64.8],[-165.0,64.4],[-168.1,65.7],[-161.7,66.1],[-166.8,68.4],[-156.6,71.4],[-136.5,68.9],[-128.1,70.5],[-108.9,67.4],[-108.2,68.7],[-106.2,68.8],[-101.5,67.6],[-97.7,68.6],[-96.1,67.3],[-94.2,69.1],[-96.5,70.1],[-95.2,71.9],[-90.5,69.5]],[[-114.2,73.1],[-109.9,73.0],[-108.2,71.7],[-108.4,73.1],[-105.4,72.7],[-104.5,71.0],[-101.1,69.6],[-107.1,69.1],[-116.1,69.2],[-117.3,70.0],[-112.4,70.4],[-119.4,71.6],[-114.2,73.1]],[[-86.6,73.2],[-82.3,73.8],[-80.7,72.1],[-77.8,72.7],[-72.2,71.6],[-67.9,70.1],[-67.0,69.2],[-68.8,68.7],[-61.9,66.9],[-63.9,65.0],[-68.0,66.3],[-64.7,63.4],[-68.8,63.7],[-66.2,61.9],[-74.8,64.7],[-78.6,64.6],[-74.0,65.5],[-72.9,67.7],[-79.0,70.2],[-88.7,70.4],[-90.2,72.2],[-88.4,73.5],[-86.6,73.2]],[[-100.4,73.8],[-97.1,73.5],[-98.1,73.0],[-96.7,71.7],[-98.4,71.3],[-102.5,72.5],[-100.4,72.7],[-101.5,73.4],[-100.4,73.8]],[[-93.2,72.8],[-95.4,72.1],[-95.5,73.9],[-90.5,73.9],[-93.2,72.8]],[[-120.5,71.4],[-125.9,71.9],[-123.9,73.7],[-124.9,74.3],[-121.5,74.4],[-115.5,73.5],[-120.5,71.4]],[[-98.5,76.7],[-98.2,75],[-100.9,75.6],[-102.6,76.3],[-98.5,76.7]],[[-108.2,76.2],[-105.9,76.0],[-106.3,75.0],[-113.7,74.4],[-111.8,75.2],[-117.7,75.2],[-115.4,76.5],[-108.2,76.2]],[[57.5,70.7],[51.5,72.0],[57.9,75.6],[68.9,76.5],[58.5,74.3],[55.4,72.4],[57.5,70.7]],[[-94.7,77.1],[-79.8,74.9],[-92.4,74.8],[-93.9,76.3],[-97.1,76.8],[-94.7,77.1]],[[-116.2,77.6],[-121.5,75.9],[-122.9,76.1],[-121.2,76.9],[-116.2,77.6]],[[107.0,77.0],[114.1,75.8],[109.4,74.2],[127.0,73.6],[131.3,70.8],[132.3,71.8],[139.9,71.5],[139.1,72.4],[140.5,72.8],[159.0,70.9],[160.9,69.4],[178.6,69.4],[180,69.0],[180,65.0],[177.4,64.6],[179.5,62.6],[170.3,59.9],[163.5,59.9],[162.0,58.2],[163.2,57.6],[162.1,54.9],[156.8,51.0],[155.9,56.8],[164.5,62.6],[160.1,60.5],[159.3,61.8],[156.7,61.4],[154.2,59.8],[155.0,59.1],[142.2,59.0],[135.1,54.7],[139.9,54.2],[141.4,52.2],[138.2,46.3],[127.5,39.8],[129.5,36.8],[129.1,35.1],[126.5,34.4],[126.9,36.9],[124.7,38.1],[125.3,39.6],[121.1,38.9],[121.6,40.9],[118.0,39.2],[118.9,37.4],[122.4,37.5],[119.2,34.9],[121.9,31.7],[121.7,28.2],[115.9,22.8],[110.8,21.4],[110.4,20.3],[108.5,21.7],[105.9,19.8],[109.3,13.4],[109.2,11.7],[105.2,8.6],[105.1,9.9],[100.1,13.4],[99.2,9.2],[103.0,5.5],[104.2,1.3],[101.4,2.8],[100.1,6.5],[98.3,7.8],[98.8,11.4],[97.2,16.9],[94.2,16.0],[94.3,18.2],[91.4,22.8],[87.0,21.5],[80.3,15.9],[79.9,10.4],[77.5,8.0],[73.5,16.0],[72.6,21.4],[70.5,20.9],[66.4,25.4],[57.4,25.7],[56.5,27.1],[54.7,26.5],[51.5,27.9],[50.1,30.1],[48.0,30.0],[51.8,24.0],[54.0,24.1],[56.4,26.4],[56.8,24.2],[59.8,22.3],[55.3,17.2],[43.5,12.6],[42.6,16.8],[34.6,28.1],[34.9,29.5],[33.9,27.6],[32.4,29.9],[36.9,22.0],[37.5,18.6],[43.3,12.4],[42.7,11.7],[44.6,10.4],[51.1,12.0],[50.6,9.2],[46.6,2.9],[40.3,-2.6],[38.7,-5.9],[40.8,-14.7],[34.8,-19.8],[35.5,-24.1],[32.6,-25.7],[32.2,-28.8],[28.2,-32.8],[20.1,-34.8],[18.4,-34.1],[13.9,-21.7],[11.6,-16.7],[13.7,-10.7],[11.9,-5.0],[8.8,-1.1],[9.4,3.7],[8.5,4.8],[5.9,4.3],[4.3,6.3],[-2.0,4.7],[-9.0,4.8],[-16.6,12.2],[-17.6,14.7],[-16.1,18.1],[-17.0,21.9],[-5.9,35.8],[-2.2,35.2],[9.5,37.4],[11.1,36.9],[10.3,33.8],[19.1,30.3],[21.5,32.8],[28.9,30.9],[33.8,31.0],[36.2,36.7],[27.6,36.7],[26.2,39.5],[33.5,42.0],[38.3,40.9],[41.7,42.0],[36.7,45.2],[39.1,47.3],[35.0,46.3],[36.3,45.1],[33.9,44.4],[32.5,45.3],[33.3,46.1],[30.7,46.6],[27.7,42.6],[28.8,41.1],[22.6,40.3],[24.0,37.7],[22.5,36.4],[19.4,40.3],[19.5,41.7],[13.1,45.7],[12.6,44.1],[18.5,40.2],[16.9,40.4],[16.1,38.0],[15.4,40.0],[8.9,44.4],[3.1,43.1],[-2.1,36.7],[-5.4,35.9],[-8.9,36.9],[-9.4,43.0],[-1.4,44.0],[-1.2,46.0],[-4.6,48.7],[-1.6,48.6],[-1.9,49.8],[1.3,50.1],[4.7,53.1],[8.1,53.5],[8.5,57.1],[10.6,57.7],[9.7,55.5],[10.9,54.0],[19.7,54.4],[21.3,55.2],[21.6,57.4],[24.1,57.0],[23.3,59.2],[29.1,60.0],[21.3,60.7],[21.5,63.2],[25.4,65.1],[22.2,65.7],[17.8,62.7],[17.1,61.3],[18.8,60.1],[15.9,56.1],[12.9,55.4],[10.4,59.5],[5.7,58.6],[5.0,62.0],[14.8,67.8],[24.5,71.0],[28.2,71.2],[31.3,70.5],[30.0,70.2],[31.1,69.6],[40.3,67.9],[41.1,66.8],[40.0,66.3],[33.2,66.6],[37.0,63.8],[37.2,65.1],[39.6,64.5],[42.1,66.5],[43.9,66.1],[43.5,68.6],[46.3,68.3],[46.3,66.7],[53.7,68.9],[59.9,68.3],[61.1,68.9],[60.6,69.9],[68.5,68.1],[69.2,68.6],[66.9,69.5],[66.7,71.0],[69.2,72.8],[72.6,72.8],[71.8,71.4],[73.7,68.4],[71.3,66.3],[72.4,66.2],[75.1,67.8],[73.1,71.4],[74.7,72.8],[76.4,71.2],[75.9,71.9],[77.6,72.3],[81.5,71.8],[80.5,73.6],[86.8,73.9],[86.0,74.5],[87.2,75.1],[104.4,77.7],[107.0,77.0]],[[18.3,79.7],[21.5,79.0],[17.1,76.8],[14.7,77.7],[10.4,79.7],[18.3,79.7]],[[25.4,80.4],[27.4,80.1],[25.9,79.5],[19.9,79.8],[25.4,80.4]],[[99.9,78.9],[91.2,80.3],[95.9,81.3],[100.2,79.8],[99.9,78.9]],[[-87.0,79.7],[-90.8,78.2],[-96.1,79.7],[-94.7,81.2],[-92.4,81.3],[-87.0,79.7]],[[-68.5,83.1],[-61.9,82.4],[-76.9,79.3],[-75.4,78.5],[-79.8,77.2],[-77.9,76.8],[-89.5,76.5],[-87.8,77.2],[-88.3,77.9],[-85.0,77.5],[-88.0,78.4],[-85.1,79.3],[-86.9,80.3],[-81.8,80.5],[-91.6,81.9],[-68.5,83.1]],[[-27.1,83.5],[-20.8,82.7],[-31.4,82.0],[-12.2,81.3],[-20.0,80.2],[-17.7,80.1],[-19.7,78.8],[-18.5,77.0],[-21.7,76.6],[-19.8,76.1],[-20.7,75.2],[-19.4,74.3],[-23.6,73.3],[-22.3,72.2],[-24.8,72.3],[-21.8,70.7],[-25.5,71.4],[-26.4,70.2],[-22.3,70.1],[-39.8,65.5],[-42.8,62.7],[-43.4,60.1],[-44.8,60.0],[-48.3,60.9],[-51.6,63.6],[-54.0,67.2],[-50.9,69.9],[-54.7,69.6],[-54.4,70.8],[-51.4,70.6],[-55.8,71.7],[-54.7,72.6],[-57.3,74.7],[-61.3,76.1],[-68.5,76.1],[-71.4,77.0],[-66.8,77.4],[-73.2,78.4],[-65.7,79.4],[-68.0,80.1],[-60.3,82.0],[-44.5,81.7],[-46.8,82.6],[-43.4,83.2],[-27.1,83.5]]]</script>
 
 <script>
 'use strict';
-const APP_VERSION = '0.1';
+const APP_VERSION = '0.2';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -809,6 +834,87 @@ function polyline(g, pts, color, width, dash){
   pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
 }
 
+/* Blick entlang der Drehachse: Breitenkreise als Kreisbahnen, Schnittlinie der Tag-Nacht-Ebene */
+function drawPolar(){
+  const cv = $('cvPolar'), W = cv.parentElement.clientWidth - 24, S = setup(cv, Math.min(W, 400)); if (!S) return;
+  const { g, w, h } = S, sun = sunNow();
+  const south = state.lat < 0;                                   /* bei Südbreite: Blick vom Südpol */
+  const dec = south ? -sun.dec : sun.dec, tanD = Math.tan(dec*D2R);
+  const cx = w/2 - 22, cy = h/2 + 4, R0 = Math.min(w, h)/2 - 44;
+  const phi = Math.abs(state.lat);
+  /* Sonnenstrahlen von rechts */
+  g.strokeStyle = 'rgba(255,200,87,.55)'; g.fillStyle = 'rgba(255,200,87,.7)'; g.lineWidth = 1.2;
+  for (let k = -3; k <= 3; k++){
+    if (k === 0) continue;
+    const y = cy + k*R0*0.3, x1 = w - 6, x2 = cx + R0 + 16;
+    g.beginPath(); g.moveTo(x1, y); g.lineTo(x2, y); g.stroke();
+    g.beginPath(); g.moveTo(x2 - 7, y); g.lineTo(x2, y - 3.5); g.lineTo(x2, y + 3.5); g.closePath(); g.fill();
+  }
+  txt(g, 'Sonne →', w - 6, 14, { align: 'right', color: C.sun, bold: true, size: 12 });
+  /* Kreis: Radius cos φ, Schnittlinie bei d = −sin φ·tan δ (in Erdradien, Sonne rechts) */
+  const circ = (lat, o) => {
+    const rho = R0*Math.cos(lat*D2R), d = -R0*Math.sin(lat*D2R)*tanD;
+    if (rho < 2) return;
+    const q = d/rho;
+    g.setLineDash(o.dash || []); g.lineWidth = o.width;
+    if (q <= -1){ g.beginPath(); g.arc(cx, cy, rho, 0, 7); g.strokeStyle = o.split ? C.sun : o.color; g.stroke(); }
+    else if (q >= 1){ g.beginPath(); g.arc(cx, cy, rho, 0, 7); g.strokeStyle = o.split ? '#3d5fa8' : o.color; g.stroke(); }
+    else {
+      const a0 = Math.acos(q);
+      g.beginPath(); g.arc(cx, cy, rho, -a0, a0); g.strokeStyle = o.split ? C.sun : o.color; g.stroke();
+      g.beginPath(); g.arc(cx, cy, rho, a0, 2*Math.PI - a0); g.strokeStyle = o.split ? '#3d5fa8' : o.color; g.stroke();
+      /* Schnittlinie (Sehne) */
+      const hh = Math.sqrt(rho*rho - d*d);
+      g.setLineDash([]); g.lineWidth = 1; g.strokeStyle = o.split ? 'rgba(232,238,249,.75)' : 'rgba(232,238,249,.3)';
+      g.beginPath(); g.moveTo(cx + d, cy - hh); g.lineTo(cx + d, cy + hh); g.stroke();
+    }
+    g.setLineDash([]);
+    if (o.label){ const la = 125*D2R; txt(g, o.label, cx + rho*Math.cos(la) - 5, cy - rho*Math.sin(la) - 3, { align: 'right', size: 10.5, color: o.split ? C.ink : C.dim }); }
+  };
+  circ(0, { split: true, width: 3, label: 'Äquator 12,0 h' });
+  const hemi = south ? 'S' : 'N';
+  if (phi > 0.3 && phi < 89.9){
+    circ(23.44, { color: 'rgba(142,162,192,.35)', width: 1, dash: [3,3] });
+    circ(66.56, { color: 'rgba(142,162,192,.35)', width: 1, dash: [3,3], label: 'Polarkreis' });
+    const dl = AST.dayLen(state.lat, sun.dec);
+    circ(phi, { split: true, width: 3.5, label: 'φ ' + fmt(phi, 1) + '° ' + hemi + ' · ' + (dl >= 24 ? '24 h' : dl <= 0 ? '0 h' : fmt(dl, 1) + ' h') });
+  }
+  /* Achse = Mittelpunkt */
+  g.beginPath(); g.arc(cx, cy, 3, 0, 7); g.fillStyle = C.ink; g.fill();
+  txt(g, 'Achse', cx, cy + 14, { align: 'center', size: 10, color: C.mut });
+  /* Uhrzeit-Marken (wahre Sonnenzeit) und Ort auf seiner Bahn */
+  const sgn = south ? -1 : 1;
+  for (const [hh, lab] of [[12, '12 h'], [0, '0 h'], [6, '6 h'], [18, '18 h']]){
+    const a = sgn*(hh - 12)*15*D2R, r = R0 + 16;
+    txt(g, lab, cx + r*Math.cos(a), cy - r*Math.sin(a) + 4, { align: 'center', size: 10, color: C.dim });
+  }
+  const H = norm360(sun.gmst + state.lon - sun.ra), a = sgn*H*D2R;
+  const rho = R0*Math.cos(phi*D2R);
+  if (rho >= 2){
+    const px = cx + rho*Math.cos(a), py = cy - rho*Math.sin(a);
+    const lit = AST.elev(state.lat, sun.dec, H) > 0;
+    g.beginPath(); g.arc(px, py, 6, 0, 7); g.fillStyle = C.loc; g.fill(); g.strokeStyle = C.bg0; g.lineWidth = 1.5; g.stroke();
+    /* Drehrichtung */
+    const a2 = a + sgn*0.35, r2 = rho + 12;
+    g.strokeStyle = C.loc; g.lineWidth = 1.2; g.beginPath(); g.arc(cx, cy, r2, -a, -a2, sgn > 0); g.stroke();
+    const tx = cx + r2*Math.cos(a2), ty = cy - r2*Math.sin(a2);
+    const dx = -sgn*Math.sin(a2), dy = -sgn*Math.cos(a2);
+    g.beginPath(); g.moveTo(tx + dx*7, ty + dy*7); g.lineTo(tx - dy*3.5, ty + dx*3.5); g.lineTo(tx + dy*3.5, ty - dx*3.5); g.closePath(); g.fillStyle = C.loc; g.fill();
+    $('polarHint').textContent = LOC.name + (Math.abs(state.lat - LOC.lat) < 0.01 ? '' : ' (auf φ verschoben)') + ': ' + (lit ? 'Tag' : 'Nacht') + ', ' + hm(state.hour) + ' UTC';
+  } else $('polarHint').textContent = 'Am Pol ist die Kreisbahn ein Punkt: ganz Tag oder ganz Nacht.';
+  txt(g, south ? 'Blick vom Südpol entlang der Achse' : 'Blick vom Nordpol entlang der Achse', 6, h - 6, { size: 10.5, color: C.dim });
+  /* Rechnung */
+  const sp = Math.sin(phi*D2R), cp = Math.cos(phi*D2R), off = sp*Math.abs(tanD), x = Math.min(1, off/Math.max(cp, 1e-9));
+  const frac = 0.5 + Math.asin(clamp(Math.tan(state.lat*D2R)*Math.tan(sun.dec*D2R), -1, 1))/Math.PI;
+  let t = 'Heute δ = <b>' + fmt(sun.dec, 1) + '°</b>. ';
+  if (phi < 0.3) t += 'φ = 0: Schnittlinie sin 0° · tan δ = <b>0</b> Erdradien neben der Achse, also durch den Mittelpunkt: Lichtanteil ½ = <b>12,0 h</b>, an jedem Tag.';
+  else if (phi > 89.9) t += 'Am Pol schrumpft die Kreisbahn auf einen Punkt; er liegt ' + (sun.dec*state.lat > 0 ? 'ganz im Licht (24 h)' : 'ganz im Schatten (0 h)') + '.';
+  else t += 'φ = ' + fmt(phi, 1) + '°: Schnittlinie sin φ · tan δ = ' + fmt(sp, 3) + ' · ' + fmt(Math.abs(tanD), 3) + ' = <b>' + fmt(off, 3) + '</b> Erdradien neben der Achse, Bahnradius cos φ = ' + fmt(cp, 3)
+      + '. Lichtanteil ½ ' + (frac >= 0.5 ? '+' : '−') + ' arcsin(' + fmt(x, 3) + ')/π = <b>' + fmt(frac, 3) + '</b> → <b>' + fmt(frac*24, 1) + ' h</b>. '
+      + 'Zum Vergleich der Äquator in derselben Zeichnung: Linie durch die Mitte, 12,0 h.';
+  $('polarTxt').innerHTML = t;
+}
+
 /* Sonnenhöhe im Tagesverlauf */
 function drawElev(){
   const cv = $('cvElev'), S = setup(cv, 210); if (!S) return;
@@ -977,12 +1083,19 @@ function renderHeader(){
   const hemi = state.lat < 0 ? seas.s : seas.n;
   $('seasonTxt').textContent = hemi + (state.lat < 0 ? ' (Süd)' : ' (Nord)');
   document.querySelectorAll('#latChips .chip').forEach(c => c.classList.toggle('act', Math.abs(parseFloat(c.dataset.lat) - state.lat) < 0.01));
+  /* Tag/Nacht-Balken */
+  const dl = AST.dayLen(state.lat, sun.dec), nl = 24 - dl;
+  $('dnNight').style.flex = '0 0 ' + (nl/24*100).toFixed(2) + '%'; $('dnDay').style.flex = '0 0 ' + (dl/24*100).toFixed(2) + '%';
+  $('dnNight').textContent = nl >= 24 ? 'Polarnacht · 24 h Nacht' : nl > 2.5 ? 'Nacht ' + fmt(nl, 1) + ' h' : nl > 0 ? fmt(nl, 1) : '';
+  $('dnDay').textContent = dl >= 24 ? 'Mitternachtssonne · 24 h Tag' : dl > 2.5 ? 'Tag ' + fmt(dl, 1) + ' h' : dl > 0 ? fmt(dl, 1) : '';
+  $('dnL').textContent = 'φ = ' + latTxt(state.lat) + ' · ' + doyLabel(Math.round(state.doy));
+  $('dnR').textContent = 'Tag ' + hm(dl).replace(':', ' h ') + ' min · Nacht ' + hm(nl).replace(':', ' h ') + ' min';
 }
 function render(){
   renderHeader();
   if (state.tab === 'bahn'){ drawOrbit(); drawSide(); fillOrbitKv(); }
   else if (state.tab === 'erde'){ drawGlobeMain(); fillLocKv(); drawStrip(); }
-  else if (state.tab === 'tag'){ drawElev(); drawHeatDay(); drawDayYear(); }
+  else if (state.tab === 'tag'){ drawPolar(); drawElev(); drawHeatDay(); drawDayYear(); }
   else { fillRadKv(); drawRadLat(); drawHeatRad(); drawRadYear(); }
 }
 let raf = 0;
@@ -994,7 +1107,7 @@ $('latChips').innerHTML = LATS.map(([n, l]) => '<button class="chip" type="butto
 $('latChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; state.lat = parseFloat(b.dataset.lat); schedule(); });
 $('doy').addEventListener('input', e => { state.doy = parseFloat(e.target.value); schedule(); });
 $('lat').addEventListener('input', e => { state.lat = parseFloat(e.target.value); schedule(); });
-$('hour').addEventListener('input', e => { state.hour = parseFloat(e.target.value); schedule(); });
+$('hour').addEventListener('input', e => { stopDay(); state.hour = parseFloat(e.target.value); schedule(); });
 $('btnNow').addEventListener('click', () => { stopPlay(); setFromMs(Date.now()); schedule(); });
 function jumpEvent(dir){
   stopPlay();
@@ -1015,8 +1128,22 @@ function tick(ts){
   if (state.doy > nd){ state.doy -= nd; }
   render(); requestAnimationFrame(tick);
 }
+let dayT = 0; state.playDay = false;
+function stopDay(){ state.playDay = false; $('btnDay').classList.remove('act'); $('btnDay').textContent = 'Tag abspielen (24 h)'; }
+function tickDay(ts){
+  if (!state.playDay) return;
+  const dt = dayT ? (ts - dayT)/1000 : 0; dayT = ts;
+  state.hour = (state.hour + dt*2) % 24;                      /* 2 h je Sekunde = 12 s je Tag */
+  render(); requestAnimationFrame(tickDay);
+}
+$('btnDay').addEventListener('click', () => {
+  if (state.playDay){ stopDay(); return; }
+  stopPlay(); state.playDay = true; dayT = 0; $('btnDay').classList.add('act'); $('btnDay').textContent = '❚❚ Stopp';
+  requestAnimationFrame(tickDay);
+});
 $('btnPlay').addEventListener('click', () => {
   if (state.playing){ stopPlay(); return; }
+  stopDay();
   state.playing = true; playT = 0; $('btnPlay').classList.add('act'); $('btnPlay').textContent = '❚❚ Stopp';
   requestAnimationFrame(tick);
 });
