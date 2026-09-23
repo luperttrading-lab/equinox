@@ -11,8 +11,8 @@
 <title>Equinox – Jahreszeiten, Tageslänge, Sonneneinstrahlung</title>
 <meta name="description" content="Warum es Jahreszeiten gibt: Erdbahn, Achsneigung, Tag und Nacht nach Breitengrad, Polarnacht und Mitternachtssonne, Sonneneinstrahlung am Oberrand der Atmosphäre.">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
 <style>
 :root{
   --bg0:#05080f; --bg1:#0b1220; --bg2:#101a2e; --line:#1d2a42;
@@ -101,6 +101,12 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 .strip .c b{display:block;color:var(--ink);font-weight:600;font-size:11.5px}
 .strip canvas{width:100%;display:block;margin-bottom:3px}
 #hourRow{margin-top:2px}
+/* ---------- Titelbild ---------- */
+.hero{position:relative;margin:0 auto 10px;max-width:760px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#000;aspect-ratio:16/10}
+.hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+.hero .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 9px;background:linear-gradient(transparent,rgba(3,6,12,.85));
+  font-size:13px;color:#e8eef9;letter-spacing:.02em}
+.hero .cap b{display:block;font-size:15px;letter-spacing:.08em;text-transform:uppercase}
 /* ---------- Tag/Nacht-Balken (fest unten) ---------- */
 #dnWrap{flex:none;padding:6px max(14px,calc(50% - 380px)) calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg0)}
 #dnHead{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:3px}
@@ -120,7 +126,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.7</button>
+    <button class="ver" id="verBtn" type="button">v0.8</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -156,6 +162,8 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <main>
 <!-- ============ BAHN ============ -->
 <section id="sec-bahn" class="act">
+  <div class="hero"><img src="titel.jpg" alt="Sonne beleuchtet die Erde: Tagseite links, Nachtseite rechts" decoding="async">
+    <div class="cap"><b>Equinox</b>Tag, Nacht und Jahreszeiten – warum die Sonne mal länger, mal kürzer scheint</div></div>
   <div class="card">
     <h2>Erdbahn von oben (ekliptischer Nordpol) <span class="r">maßstäblich, e = 0,0167</span></h2>
     <canvas id="cvOrbit"></canvas>
@@ -366,7 +374,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.7';
+const APP_VERSION = '0.8';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.

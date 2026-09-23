@@ -1,6 +1,6 @@
 /* Equinox – Service Worker: eigene Dateien Netz zuerst (Cache nur als Rückfall offline) */
-const CACHE = 'equinox-v1';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './favicon-32.png'];
+const CACHE = 'equinox-v2';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './favicon-32.png', './titel.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {})));
