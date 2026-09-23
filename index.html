@@ -158,7 +158,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v1.9</button>
+    <button class="ver" id="verBtn" type="button">v2.0</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -319,7 +319,7 @@ Bestrahlung TOA E = S₀ · (1 AE / r)²,  S₀ = 1361 W/m²
       <button class="ibtn" id="btnDay" type="button">Tag abspielen (24 h)</button>
     </div>
     <div class="hint" id="polarHint" style="margin-top:4px;min-height:1.3em"></div>
-    <p id="polarTxt"></p>
+    <div class="kv" id="polarTxt" style="margin-top:6px"></div>
     <p>Jeder Breitenkreis ist eine <b>Kreisbahn um die Drehachse</b>; ein Ort läuft sie in 24 h einmal ab. Beleuchtet ist alles
     rechts der Schnittlinie. Die Tag-Nacht-Grenze ist eine Ebene <b>durch den Erdmittelpunkt</b>, um δ gegen die Achse gekippt.
     Der Äquator ist der einzige Breitenkreis, dessen Mittelpunkt der Erdmittelpunkt ist – also läuft seine Schnittlinie
@@ -370,7 +370,9 @@ cos ω₀ ≤ −1 → 24 h Mitternachtssonne, ≥ +1 → 0 h Polarnacht
       <span><i style="background:#3d5fa8"></i>südlich</span>
       <span><i style="background:rgba(160,200,170,.7)"></i>Ebene des Erdäquators</span>
     </div>
-    <p id="moonInfo"></p>
+    <div class="kv" id="moonInfo" style="margin-top:6px"></div>
+    <p>Die Mondbahn ist gegen den Erdäquator geneigt: Einen halben Monat steht der Mond nördlich davon (helle Bahn) –
+    dann steht er bei uns lange am Himmel –, einen halben Monat südlich (gestrichelt) – dann nur kurz.</p>
     <p class="hint">Der Mond ist in Wirklichkeit rund 60 Erdradien entfernt und hat ein Viertel des Erddurchmessers.
     Die Bahnneigung gegen den Erdäquator ist dagegen richtig gezeichnet – darauf kommt es hier an.</p>
   </div>
@@ -461,7 +463,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -1215,13 +1217,14 @@ function drawPolar(){
   /* Rechnung */
   const sp = Math.sin(phi*D2R), cp = Math.cos(phi*D2R), off = sp*Math.abs(tanD), x = Math.min(1, off/Math.max(cp, 1e-9));
   const frac = 0.5 + Math.asin(clamp(Math.tan(state.lat*D2R)*Math.tan(sun.dec*D2R), -1, 1))/Math.PI;
-  let t = 'Heute δ = <b>' + fmt(sun.dec, 1) + '°</b>. ';
-  if (phi < 0.3) t += 'φ = 0: Schnittlinie sin 0° · tan δ = <b>0</b> Erdradien neben der Achse, also durch den Mittelpunkt: Lichtanteil ½ = <b>12,0 h</b>, an jedem Tag.';
-  else if (phi > 89.9) t += 'Am Pol schrumpft die Kreisbahn auf einen Punkt; er liegt ' + (sun.dec*state.lat > 0 ? 'ganz im Licht (24 h)' : 'ganz im Schatten (0 h)') + '.';
-  else t += 'φ = ' + fmt(phi, 1) + '°: Schnittlinie sin φ · tan δ = ' + fmt(sp, 3) + ' · ' + fmt(Math.abs(tanD), 3) + ' = <b>' + fmt(off, 3) + '</b> Erdradien neben der Achse, Bahnradius cos φ = ' + fmt(cp, 3)
-      + '. Lichtanteil ½ ' + (frac >= 0.5 ? '+' : '−') + ' arcsin(' + fmt(x, 3) + ')/π = <b>' + fmt(frac, 3) + '</b> → <b>' + fmt(frac*24, 1) + ' h</b>. '
-      + 'Zum Vergleich der Äquator in derselben Zeichnung: Linie durch die Mitte, 12,0 h.';
-  $('polarTxt').innerHTML = t;
+  const pol = phi > 89.9, dlp = AST.dayLen(state.lat, sun.dec);
+  const zeilen = [
+    ['δ heute', (sun.dec >= 0 ? '+' : '−') + fmt(Math.abs(sun.dec), 1) + '°'],
+    ['Versatz sin φ · tan δ', fmt(off, 3) + ' R'],
+    ['Bahnradius cos φ', pol ? '0 (Punkt)' : fmt(cp, 3) + ' R'],
+    ['Lichtanteil → Tag', fmt(pol ? (dlp >= 24 ? 1 : 0) : frac, 3) + ' → ' + fmt(dlp, 1) + ' h']
+  ];
+  $('polarTxt').innerHTML = zeilen.map(([k, v]) => '<div><span>' + k + '</span><span>' + v + '</span></div>').join('');
 }
 
 function fillSchemaTxt(){
@@ -1423,11 +1426,13 @@ function drawMoonModel(){
              : el < 192 ? 'Vollmond' : el < 260 ? 'abnehmender Mond' : el < 280 ? 'letztes Viertel' : 'abnehmende Sichel';
   const P = moonData(state.year, state.lat); let pn = null; for (const p of P) if (!pn || Math.abs(p.mid - jn) < Math.abs(pn.mid - jn)) pn = p;
   const dz = x => { const m = Math.round(clamp(x, 0, 24)*60); return Math.floor(m/60) + ' h ' + pad2(m % 60); };
-  $('moonInfo').innerHTML = '<b>' + name + '</b>, ' + Math.round(k*100) + ' % beleuchtet · Deklination <b>' + (mo.dec >= 0 ? '+' : '−') + fmt(Math.abs(mo.dec), 1) + '°</b> ('
-    + (mo.dec >= 0 ? 'nördlich' : 'südlich') + ' des Äquators) · ' + fmtInt(mo.dist) + ' km'
-    + (pn ? ' · Durchgang bei φ = ' + latTxt(state.lat) + ': <b>' + dz(pn.h) + '</b>' : '') + '. '
-    + 'Der Mond läuft auf einer Bahn, die gegen den Erdäquator geneigt ist: einen halben Monat nördlich davon (hell) – dann steht er '
-    + 'bei uns lange am Himmel –, einen halben Monat südlich (dunkel) – dann nur kurz.';
+  $('moonInfo').innerHTML = [
+    ['Phase', name],
+    ['Beleuchtet', Math.round(k*100) + ' %'],
+    ['Deklination', (mo.dec >= 0 ? '+' : '−') + fmt(Math.abs(mo.dec), 1) + '° ' + (mo.dec >= 0 ? 'nördlich' : 'südlich')],
+    ['Entfernung', fmtInt(mo.dist) + ' km'],
+    ['Durchgang bei φ ' + latTxt(state.lat), pn ? dz(pn.h) : '–']
+  ].map(([a, b]) => '<div><span>' + a + '</span><span>' + b + '</span></div>').join('');
 }
 
 /* Mond: Dauer ueber dem Horizont je Durchgang, dazu Sonne und Mond am Aequator */
