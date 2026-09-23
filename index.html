@@ -101,11 +101,14 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 .strip .c b{display:block;color:var(--ink);font-weight:600;font-size:11.5px}
 .strip canvas{width:100%;display:block;margin-bottom:3px}
 #hourRow{margin-top:2px}
-/* ---------- Startbild (1,5 s, dann Ausblenden; Tippen ueberspringt) ---------- */
+/* ---------- Startbild (2,5 s, dann Ausblenden; Tippen ueberspringt) ---------- */
 #splash{position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;
   transition:opacity .45s ease}
-#splash img{display:block;width:100%;max-width:560px;height:auto}
-#splash .t{margin-top:14px;font-size:22px;font-weight:700;letter-spacing:.3em;color:#e8eef9}
+#splash canvas{position:absolute;inset:0;width:100%;height:100%}
+#splash img{position:relative;display:block;width:100%;max-width:560px;height:auto;mix-blend-mode:screen;
+  -webkit-mask-image:linear-gradient(transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(transparent,#000 9%,#000 91%,transparent)}
+#splash .t{position:relative;margin-top:14px;font-size:22px;font-weight:700;letter-spacing:.3em;color:#e8eef9}
+#splash .v{position:relative;margin-top:6px;font-size:13px;color:#8ea2c0;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em}
 #splash.weg{opacity:0;pointer-events:none}
 /* ---------- Tag/Nacht-Balken (fest unten) ---------- */
 #dnWrap{flex:none;padding:6px max(14px,calc(50% - 380px)) calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg0)}
@@ -118,10 +121,29 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 </head>
 <body>
 
-<div id="splash"><img src="titel.jpg" alt=""><div class="t">EQUINOX</div></div>
-<script>(function(){ const s = document.getElementById('splash');
+<div id="splash"><canvas id="splashSky"></canvas><img id="splashImg" src="titel.jpg" alt=""><div class="t">EQUINOX</div><div class="v" id="splashVer"></div></div>
+<script>(function(){ const s = document.getElementById('splash'), img = document.getElementById('splashImg'), cv = document.getElementById('splashSky');
+  /* Sternenhimmel ueber den ganzen Bildschirm; Erde und Sonne im Foto bleiben frei (Lage im Foto: Erde 572/510 r 205, Sonne -30/510 r 190 von 877x1024) */
+  function himmel(){
+    const W = innerWidth, H = innerHeight, d = Math.min(3, devicePixelRatio || 1);
+    cv.width = W*d; cv.height = H*d; const g = cv.getContext('2d'); g.setTransform(d,0,0,d,0,0);
+    const r = img.getBoundingClientRect(), k = r.width/877, frei = [];
+    if (r.height > 0) frei.push([r.left + 572*k, r.top + 510*k, 212*k], [r.left - 30*k, r.top + 510*k, 200*k]);
+    let seed = 20260923; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
+    const n = Math.round(W*H/650);
+    for (let i = 0; i < n; i++){
+      const x = rnd()*W, y = rnd()*H, m = rnd(), hell = Math.pow(rnd(), 2.2);
+      if (frei.some(([cx,cy,rr]) => (x-cx)*(x-cx) + (y-cy)*(y-cy) < rr*rr)) continue;
+      const rad = 0.35 + hell*1.25, a = 0.35 + hell*0.65;
+      const tint = m < 0.12 ? '255,220,180' : m < 0.24 ? '190,210,255' : '255,255,255';
+      if (hell > 0.6){ const gl = g.createRadialGradient(x,y,0,x,y,rad*4); gl.addColorStop(0,'rgba('+tint+','+(a*0.45)+')'); gl.addColorStop(1,'rgba('+tint+',0)');
+        g.fillStyle = gl; g.beginPath(); g.arc(x,y,rad*4,0,7); g.fill(); }
+      g.fillStyle = 'rgba('+tint+','+a+')'; g.beginPath(); g.arc(x,y,rad,0,7); g.fill();
+    }
+  }
+  himmel(); if (!img.complete) img.addEventListener('load', himmel);
   const weg = () => { if (s.classList.contains('weg')) return; s.classList.add('weg'); setTimeout(() => s.remove(), 500); };
-  setTimeout(weg, 1500); s.addEventListener('click', weg); })();</script>
+  setTimeout(weg, 2500); s.addEventListener('click', weg); })();</script>
 
 <div class="update" id="update" hidden>
   <span id="update-text"></span>
@@ -131,7 +153,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v0.9</button>
+    <button class="ver" id="verBtn" type="button">v1.0</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -377,7 +399,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '0.9';
+const APP_VERSION = '1.0';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -1451,6 +1473,7 @@ window.addEventListener('pageshow', () => setTimeout(checkForUpdate, 800));
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 $('verBtn').addEventListener('click', () => checkForUpdate(true));
 $('verBtn').textContent = 'v' + APP_VERSION;
+{ const sv = document.getElementById('splashVer'); if (sv) sv.textContent = 'Version ' + APP_VERSION; }
 {
   const GESEHEN = 'equinox.gesehen'; let vorher = null;
   try{ vorher = localStorage.getItem(GESEHEN); }catch(_){}

@@ -8,3 +8,8 @@ Sonnenformeln und Landmassen wie in Satellitenhimmel. Version in `APP_VERSION` b
 Am Ende jeder Antwort genau einmal `python3 tools/kosten.py` ausführen und die Ausgabe wörtlich als
 letzte Zeile setzen (eine `<sub>…</sub>`-Zeile; nicht umformatieren, nicht schätzen, nichts dahinter).
 Läuft das Skript nicht, das offen sagen statt eine Zahl zu erfinden.
+
+## Benachrichtigung
+
+Nach jedem abgeschlossenen Umbau (gepusht auf main) eine Push-Nachricht aufs Handy schicken
+(Werkzeug PushNotification): eine Zeile, was fertig ist, dazu eine kurze Frage zur Abnahme.
