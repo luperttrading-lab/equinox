@@ -112,7 +112,10 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 #splash.weg{opacity:0;pointer-events:none}
 /* ---------- Tag/Nacht-Balken (fest unten) ---------- */
 #dnWrap{flex:none;padding:6px max(14px,calc(50% - 380px)) calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg0)}
-#dnHead{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:3px}
+#dnHead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--mut);margin-bottom:5px}
+#dnHead .grp{display:flex;gap:6px;flex:none}
+.ibtn.sm{padding:4px 10px;font-size:13px;border-radius:9px}
+#dnR{text-align:right;min-width:0}
 #dnBar{display:flex;height:22px;border-radius:7px;overflow:hidden;border:1px solid var(--line);font-size:11.5px;font-weight:600}
 #dnBar div{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;transition:flex-basis .15s}
 #dnNight{background:#3d5fa8;color:#e8eef9} #dnDay{background:var(--sun);color:#1a1204}
@@ -153,7 +156,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v1.3</button>
+    <button class="ver" id="verBtn" type="button">v1.4</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -163,7 +166,6 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
     <button class="ibtn" id="btnPrev" type="button" title="voriges Ereignis">◀</button>
     <div id="dateTxt" class="num">–</div>
     <button class="ibtn" id="btnNext" type="button" title="nächstes Ereignis">▶</button>
-    <button class="ibtn" id="btnPlay" type="button">Jahr abspielen</button>
     <button class="ibtn" id="btnNow" type="button">Jetzt</button>
   </div>
   <div class="crow">
@@ -201,6 +203,9 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
     am 21.12. von ihr weg (Nordwinter); an den Tagundnachtgleichen steht sie seitlich. Die Striche auf der Bahn sind Perihel
     (Anfang Januar, 147,1 Mio km) und Aphel (Anfang Juli, 152,1 Mio km): Der Abstand schwankt nur um 3,4 % und ist im
     Nordwinter am kleinsten – er macht nicht die Jahreszeiten.</p>
+    <p><b>Das Auge</b> in der Bahn zeigt, von wo die Seitenansicht blickt: hinter der Erde, in ihrer Laufrichtung.
+    Weil die Erde gegen den Uhrzeigersinn läuft, liegt die Sonne von dort aus immer links – deshalb steht sie oben in der
+    Mitte und unten links. Es ist dieselbe Situation aus zwei Blickwinkeln.</p>
     <p><b>Von der Seite:</b> Die Tag-Nacht-Grenze steht hier immer senkrecht. Die Achse ist um δ zur Sonne geneigt:
     ±23,44° an den Sonnenwenden, 0° an den Tagundnachtgleichen. Sie scheint beim Abspielen hin und her zu kippen,
     weil sich der Blickwinkel mit der Sonne dreht – im Raum bleibt sie fest. Der Breitenkreis φ ist gelb, soweit er im Licht
@@ -397,7 +402,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 </main>
 
 <div id="dnWrap">
-  <div id="dnHead"><span id="dnL">–</span><span id="dnR">–</span></div>
+  <div id="dnHead"><span class="grp"><button class="ibtn sm" id="btnPlay" type="button">▶ Jahr abspielen</button><button class="ibtn sm" id="btnSpeed" type="button" title="Tempo">1×</button></span><span id="dnR">–</span></div>
   <div id="dnBar"><div id="dnNight"></div><div id="dnDay"></div></div>
 </div>
 
@@ -405,7 +410,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -761,8 +766,8 @@ function drawOrbit(){
     const s0 = AST.sun(ev.jd), [x, y] = P(s0), d = new Date((ev.jd - 2440587.5)*86400000);
     drawGlobe(g, x, y, rk, s0, { view: 'obl', detail: false, latRing: null });
     const lab = pad2(d.getUTCDate()) + '.' + pad2(d.getUTCMonth()+1) + '.', oben = y < cy - 5;
-    const nah = Math.hypot(x - ex, y - ey) < re + rk, off = (nah ? re + 4 : rk);      /* aktuelle Erde steht darauf: Datum ausserhalb ihres Rings */
-    txt(g, lab, x, oben ? y - off - 5 : y + off + 12, { align: 'center', size: 10, color: C.mut });
+    if (Math.hypot(x - ex, y - ey) < re + rk + 6) continue;            /* aktuelle Erde steht darauf: Datum steht ohnehin oben */
+    txt(g, lab, x, oben ? y - rk - 5 : y + rk + 12, { align: 'center', size: 10, color: C.mut });
   }
   drawGlobe(g, ex, ey, re, sun, { view: 'obl', detail: false, latRing: state.lat, poleLabels: w > 300 });
   g.beginPath(); g.arc(ex, ey, re + 4, 0, 7); g.strokeStyle = C.loc; g.lineWidth = 1.2; g.setLineDash([3,3]); g.stroke(); g.setLineDash([]);
@@ -771,6 +776,14 @@ function drawOrbit(){
   const bx = ex + tx*(re + 18), by = ey + ty*(re + 18);
   g.strokeStyle = C.loc; g.lineWidth = 1.5; g.beginPath(); g.moveTo(ex + tx*(re + 8), ey + ty*(re + 8)); g.lineTo(bx, by); g.stroke();
   g.beginPath(); g.moveTo(bx + tx*6, by + ty*6); g.lineTo(bx - ty*3.5, by + tx*3.5); g.lineTo(bx + ty*3.5, by - tx*3.5); g.closePath(); g.fillStyle = C.loc; g.fill();
+  /* Auge: Standort der Seitenansicht, hinter der Erde auf der Bahn, Blick in Laufrichtung -> Sonne links */
+  const ax = ex - tx*(re + 22), ay = ey - ty*(re + 22), an = Math.atan2(ty, tx);
+  g.strokeStyle = 'rgba(232,238,249,.35)'; g.setLineDash([2,3]); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(ax + tx*8, ay + ty*8); g.lineTo(ex - tx*(re + 5), ey - ty*(re + 5)); g.stroke(); g.setLineDash([]);
+  g.save(); g.translate(ax, ay); g.rotate(an);
+  g.beginPath(); g.moveTo(-7, 0); g.quadraticCurveTo(0, -6, 7, 0); g.quadraticCurveTo(0, 6, -7, 0); g.closePath();
+  g.fillStyle = '#0b1220'; g.fill(); g.strokeStyle = C.ink; g.lineWidth = 1.2; g.stroke();
+  g.beginPath(); g.arc(1, 0, 2.3, 0, 7); g.fillStyle = C.ink; g.fill(); g.restore();
 }
 
 function drawSide(){
@@ -1332,8 +1345,7 @@ function renderHeader(){
   $('dnNight').style.flex = '0 0 ' + (nl/24*100).toFixed(2) + '%'; $('dnDay').style.flex = '0 0 ' + (dl/24*100).toFixed(2) + '%';
   $('dnNight').textContent = nl >= 24 ? 'Polarnacht · 24 h Nacht' : nl > 2.5 ? 'Nacht ' + fmt(nl, 1) + ' h' : nl > 0 ? fmt(nl, 1) : '';
   $('dnDay').textContent = dl >= 24 ? 'Mitternachtssonne · 24 h Tag' : dl > 2.5 ? 'Tag ' + fmt(dl, 1) + ' h' : dl > 0 ? fmt(dl, 1) : '';
-  $('dnL').textContent = (doseBar ? 'Dosenwand, jede Höhe' : 'φ = ' + latTxt(state.lat)) + ' · ' + doyLabel(Math.round(state.doy));
-  $('dnR').textContent = 'Tag ' + hm(dl).replace(':', ' h ') + ' min · Nacht ' + hm(nl).replace(':', ' h ') + ' min';
+  $('dnR').textContent = (doseBar ? 'Dosenwand' : doyLabel(Math.round(state.doy))) + ' · Tag ' + hm(dl).replace(':', ' h ') + ' · Nacht ' + hm(nl).replace(':', ' h ');
 }
 function render(){
   renderHeader();
@@ -1363,11 +1375,18 @@ function jumpEvent(dir){
 $('btnPrev').addEventListener('click', () => jumpEvent(-1));
 $('btnNext').addEventListener('click', () => jumpEvent(1));
 let playT = 0;
-function stopPlay(){ state.playing = false; $('btnPlay').classList.remove('act'); $('btnPlay').textContent = 'Jahr abspielen'; }
+function stopPlay(){ state.playing = false; $('btnPlay').classList.remove('act'); $('btnPlay').textContent = '▶ Jahr abspielen'; }
+/* Tempo: gilt fuer 'Jahr abspielen' (Basis 18 Tage/s) und 'Tag abspielen' (Basis 2 h/s) */
+const TEMPI = [0.5, 1, 2, 4];
+let tempoIdx = 1; try{ const t = parseInt(localStorage.getItem('equinox.tempo'), 10); if (t >= 0 && t < TEMPI.length) tempoIdx = t; }catch(_){}
+const tempo = () => TEMPI[tempoIdx];
+function zeigeTempo(){ $('btnSpeed').textContent = (tempo() === 0.5 ? '½' : tempo()) + '×'; }
+zeigeTempo();
+$('btnSpeed').addEventListener('click', () => { tempoIdx = (tempoIdx + 1) % TEMPI.length; try{ localStorage.setItem('equinox.tempo', tempoIdx); }catch(_){} zeigeTempo(); });
 function tick(ts){
   if (!state.playing) return;
   const dt = playT ? (ts - playT)/1000 : 0; playT = ts;
-  state.doy += dt*18;                                         /* 18 Tage je Sekunde ≈ 20 s je Jahr */
+  state.doy += dt*18*tempo();                                         /* 18 Tage je Sekunde ≈ 20 s je Jahr */
   const nd = AST.daysInYear(state.year);
   if (state.doy > nd){ state.doy -= nd; }
   render(); requestAnimationFrame(tick);
@@ -1377,7 +1396,7 @@ function stopDay(){ state.playDay = false; $('btnDay').classList.remove('act'); 
 function tickDay(ts){
   if (!state.playDay) return;
   const dt = dayT ? (ts - dayT)/1000 : 0; dayT = ts;
-  state.hour = (state.hour + dt*2) % 24;                      /* 2 h je Sekunde = 12 s je Tag */
+  state.hour = (state.hour + dt*2*tempo()) % 24;                      /* 2 h je Sekunde = 12 s je Tag */
   render(); requestAnimationFrame(tickDay);
 }
 $('btnDay').addEventListener('click', () => {
