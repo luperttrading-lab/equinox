@@ -90,6 +90,8 @@ section.act{display:block}
 .kv span:first-child{color:var(--mut)}
 .kv span:last-child{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .kv .st{color:var(--sun)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.duo .sub{font-size:11px;color:var(--mut);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--mut);margin-top:6px}
 .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
 details{margin-top:6px}
@@ -153,7 +155,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v1.0</button>
+    <button class="ver" id="verBtn" type="button">v1.1</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -190,11 +192,24 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <!-- ============ BAHN ============ -->
 <section id="sec-bahn" class="act">
   <div class="card">
-    <h2>Erdbahn von oben (ekliptischer Nordpol) <span class="r">maßstäblich, e = 0,0167</span></h2>
-    <canvas id="cvOrbit"></canvas>
-    <p>Die Erdachse zeigt im Raum <b>immer in dieselbe Richtung</b> (auf dem Bild: nach oben). Nur weil die Erde um die Sonne
-    wandert, ist mal die Nord-, mal die Südhalbkugel der Sonne zugeneigt. Der Abstand zur Sonne schwankt nur um 3,4 %
-    und ist nächstgelegen im Nordwinter – er macht nicht die Jahreszeiten.</p>
+    <h2>Bahn und Seitenansicht <span class="r">gleicher Zeitpunkt</span></h2>
+    <div class="duo">
+      <div><div class="sub">Von oben (ekliptischer Nordpol)</div><canvas id="cvOrbit"></canvas></div>
+      <div><div class="sub">Von der Seite, Sonne links</div><canvas id="cvSide"></canvas></div>
+    </div>
+    <p id="sideTxt"></p>
+    <details><summary>Erklärung zu beiden Bildern</summary>
+    <p><b>Von oben:</b> Die Erde läuft gegen den Uhrzeigersinn um die Sonne. Die Erdachse zeigt im Raum <b>immer in dieselbe
+    Richtung</b> (im Bild: Nordpol nach oben geneigt). Nur weil die Erde um die Sonne wandert, ist mal die Nord-, mal die
+    Südhalbkugel der Sonne zugeneigt. Die kleinen Erden markieren die Tagundnachtgleichen (20.03., 23.09.) und Sonnenwenden
+    (21.06., 21.12.), die Striche auf der Bahn Perihel (Anfang Januar, 147,1 Mio km) und Aphel (Anfang Juli, 152,1 Mio km).
+    Der Abstand schwankt nur um 3,4 % und ist im Nordwinter am kleinsten – er macht nicht die Jahreszeiten.
+    ♈ zeigt zum Frühlingspunkt.</p>
+    <p><b>Von der Seite:</b> Die Tag-Nacht-Grenze steht hier immer senkrecht. Die Achse ist um δ zur Sonne geneigt:
+    ±23,44° an den Sonnenwenden, 0° an den Tagundnachtgleichen. Sie scheint beim Abspielen hin und her zu kippen,
+    weil sich der Blickwinkel mit der Sonne dreht – im Raum bleibt sie fest. Der Breitenkreis φ ist gelb, soweit er im Licht
+    liegt, und blau im Schatten; der grüne Punkt ist Wettenberg.</p>
+    </details>
     <details><summary>Eiert die Achse?</summary>
     <p>Im Bild scheint die Achse hin und her zu kippen, wenn man das Jahr abspielt. Das ist ein
     <b>Blickwinkel-Effekt</b>: In der Seitenansicht und im Globus wandert der Betrachter mit der Sonne mit.
@@ -212,11 +227,6 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
     ohne Bedeutung. Diese App rechnet nur die langsame Abnahme von ε mit; Nutation und Polbewegung
     bleiben weg, sie liegen unter 0,01°.</p>
     </details>
-  </div>
-  <div class="card">
-    <h2>Seitenansicht in der Bahnebene <span class="r">Sonne links, Nord oben</span></h2>
-    <canvas id="cvSide"></canvas>
-    <p id="sideTxt"></p>
   </div>
   <div class="card">
     <h2>Zahlen zum Datum</h2>
@@ -399,7 +409,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -723,9 +733,10 @@ function drawGlobe(g, cx, cy, R, sun, opts){
    BAHN
    ===================================================================== */
 function drawOrbit(){
-  const cv = $('cvOrbit'), W0 = Math.min(cv.parentElement.clientWidth - 24, 440), S = setup(cv, W0 + 30); if (!S) return;
+  const cv = $('cvOrbit'), cw = cv.clientWidth || cv.parentElement.clientWidth, K = cw < 300;   /* K = kompakt (halbe Breite) */
+  const W0 = Math.min(cw, 440), S = setup(cv, K ? W0 : W0 + 30); if (!S) return;
   const { g, w, h } = S, sun = sunNow();
-  const cx = w/2, cy = W0/2 + 4, a = W0/2 - 64;                /* große Halbachse in px */
+  const cx = w/2, cy = K ? h/2 : W0/2 + 4, a = K ? W0/2 - 18 : W0/2 - 64;   /* große Halbachse in px */
   const fitX = (x, s, size) => { g.font = size + 'px sans-serif'; const tw = g.measureText(s).width/2; return clamp(x, tw + 4, w - tw - 4); };
   const e = 0.01671, b = a*Math.sqrt(1 - e*e), fx = a*e;        /* Sonne im Brennpunkt: Perihel Richtung g = 0 */
   /* Ekliptik-Länge der Erde = λ + 180; Perihel liegt bei λ_Erde = λ_peri */
@@ -739,14 +750,15 @@ function drawOrbit(){
   /* Position der Erde zu einer Sonnen-Geometrie (Bild: +x rechts, +y oben) */
   const earthPos = (s) => { const L = norm360(s.lam + 180)*D2R, r = s.r*a; return [cx + r*Math.cos(L), cy - r*Math.sin(L)]; };
   /* Sonne */
-  const sg = g.createRadialGradient(cx, cy, 2, cx, cy, 26);
+  const rs = K ? 14 : 26;
+  const sg = g.createRadialGradient(cx, cy, 2, cx, cy, rs);
   sg.addColorStop(0, '#fff3c4'); sg.addColorStop(0.35, C.sun); sg.addColorStop(1, 'rgba(255,200,87,0)');
-  g.beginPath(); g.arc(cx, cy, 26, 0, 7); g.fillStyle = sg; g.fill();
-  txt(g, 'Sonne', cx, cy + 36, { align:'center', color: C.mut });
+  g.beginPath(); g.arc(cx, cy, rs, 0, 7); g.fillStyle = sg; g.fill();
+  if (!K) txt(g, 'Sonne', cx, cy + 36, { align:'center', color: C.mut });
   /* Richtung Frühlingspunkt (+x) */
   g.strokeStyle = 'rgba(93,111,143,.5)'; g.lineWidth = 1; g.setLineDash([2,4]);
-  g.beginPath(); g.moveTo(cx + 14, cy); g.lineTo(cx + a + 8, cy); g.stroke(); g.setLineDash([]);
-  txt(g, '♈', cx + 30, cy - 5, { align:'left', color: C.dim, size: 11 });
+  g.beginPath(); g.moveTo(cx + (K ? 9 : 14), cy); g.lineTo(cx + a + (K ? 4 : 8), cy); g.stroke(); g.setLineDash([]);
+  txt(g, '♈', cx + (K ? 16 : 30), cy - 4, { align:'left', color: C.dim, size: K ? 9 : 11 });
   /* Kardinalpunkte + Perihel/Aphel */
   const now = dateMs();
   for (const ev of EVENTS){
@@ -757,6 +769,7 @@ function drawOrbit(){
     if (ev.key === 'peri' || ev.key === 'aph'){
       g.beginPath(); g.moveTo(x - outward[0]*5, y - outward[1]*5); g.lineTo(x + outward[0]*5, y + outward[1]*5);
       g.strokeStyle = C.mut; g.lineWidth = 1.5; g.stroke();
+      if (K) continue;
       /* Beschriftung innen (zur Sonne hin), seitlich versetzt weg von der nahen Sonnenwende */
       const lx = x - outward[0]*30 + (ev.key === 'peri' ? -34 : 34), ly = y - outward[1]*30;
       const s1 = ev.short + ' ' + lab, s2 = fmt(s.r*AU_KM/1e6, 1) + ' Mio km';
@@ -764,8 +777,10 @@ function drawOrbit(){
       txt(g, s2, fitX(lx, s2, 10), ly + (ev.key === 'peri' ? 16 : 4), { align: 'center', color: C.dim, size: 10 });
       continue;
     }
-    const r = 17;
+    const r = K ? 7 : 17;
     drawGlobe(g, x, y, r, s, { view: 'top', detail: false, latRing: null });
+    if (K){ const lx = x - outward[0]*(r + 15), ly = y - outward[1]*(r + 11) + 3;
+      txt(g, lab, fitX(lx, lab, 9), ly, { align: 'center', color: C.mut, size: 9 }); continue; }
     const above = outward[1] < -0.5;                          /* oberer Punkt: Text darüber */
     const s1 = ev.short, s2 = lab + (ev.key === 'sol1' ? ' · Nord zur Sonne' : ev.key === 'sol2' ? ' · Süd zur Sonne' : ' · 12 h überall');
     const ly = above ? y - r - 20 : y + r + 16;
@@ -775,30 +790,38 @@ function drawOrbit(){
   /* aktuelle Erde */
   const [ex, ey] = earthPos(sun);
   g.strokeStyle = 'rgba(255,200,87,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(ex, ey); g.stroke();
-  drawGlobe(g, ex, ey, 26, sun, { view: 'top', detail: false, latRing: state.lat, poleLabels: true });
-  g.beginPath(); g.arc(ex, ey, 30, 0, 7); g.strokeStyle = C.loc; g.lineWidth = 1.2; g.setLineDash([3,3]); g.stroke(); g.setLineDash([]);
+  const re = K ? 12 : 26;
+  drawGlobe(g, ex, ey, re, sun, { view: 'top', detail: false, latRing: state.lat, poleLabels: !K });
+  g.beginPath(); g.arc(ex, ey, re + 4, 0, 7); g.strokeStyle = C.loc; g.lineWidth = 1.2; g.setLineDash([3,3]); g.stroke(); g.setLineDash([]);
   /* Bewegungsrichtung (gegen den Uhrzeigersinn) */
   const L = norm360(sun.lam + 180)*D2R, tx = -Math.sin(L), ty = -Math.cos(L);
-  const bx = ex + tx*44, by = ey + ty*44;
-  g.strokeStyle = C.loc; g.lineWidth = 1.5; g.beginPath(); g.moveTo(ex + tx*34, ey + ty*34); g.lineTo(bx, by); g.stroke();
+  const bx = ex + tx*(re + 18), by = ey + ty*(re + 18);
+  g.strokeStyle = C.loc; g.lineWidth = 1.5; g.beginPath(); g.moveTo(ex + tx*(re + 8), ey + ty*(re + 8)); g.lineTo(bx, by); g.stroke();
   g.beginPath(); g.moveTo(bx + tx*6, by + ty*6); g.lineTo(bx - ty*3.5, by + tx*3.5); g.lineTo(bx + ty*3.5, by - tx*3.5); g.closePath(); g.fillStyle = C.loc; g.fill();
-  txt(g, 'Blick vom ekliptischen Nordpol · Umlauf gegen den Uhrzeigersinn', w/2, h - 17, { size: 10, color: C.dim, align: 'center' });
-  txt(g, '♈ = Frühlingspunkt · Achse im Raum fest, Nordpol nach oben geneigt', w/2, h - 5, { size: 10, color: C.dim, align: 'center' });
+  if (!K){
+    txt(g, 'Blick vom ekliptischen Nordpol · Umlauf gegen den Uhrzeigersinn', w/2, h - 17, { size: 10, color: C.dim, align: 'center' });
+    txt(g, '♈ = Frühlingspunkt · Achse im Raum fest, Nordpol nach oben geneigt', w/2, h - 5, { size: 10, color: C.dim, align: 'center' }); }
 }
 
 function drawSide(){
-  const cv = $('cvSide'), S = setup(cv, 250); if (!S) return;
+  const cv = $('cvSide'), cw = cv.clientWidth || cv.parentElement.clientWidth, K = cw < 300;
+  const S = setup(cv, K ? cw : 250); if (!S) return;
   const { g, w, h } = S, sun = sunNow();
-  const R = Math.min(78, w*0.22), cx = w*0.58, cy = h/2 - 6;
+  const R = K ? w*0.25 : Math.min(78, w*0.22), cx = w*0.6, cy = K ? h/2 + 3 : h/2 - 6;
   drawGlobe(g, cx, cy, R, sun, { view: 'side', latRing: state.lat, rays: true, loc: true });
-  txt(g, '← Sonne', 10, 16, { color: C.sun, bold: true, size: 12 });
+  txt(g, '← Sonne', K ? 2 : 10, K ? 12 : 16, { color: C.sun, bold: true, size: K ? 10 : 12 });
   /* Terminator ist hier immer die senkrechte Mittellinie */
   g.strokeStyle = 'rgba(232,238,249,.25)'; g.setLineDash([3,3]); g.lineWidth = 1;
-  g.beginPath(); g.moveTo(cx, cy - R - 14); g.lineTo(cx, cy + R + 14); g.stroke(); g.setLineDash([]);
-  txt(g, 'Tag', cx - 8, 16, { align: 'right', color: C.sun, size: 11 });
-  txt(g, 'Nacht', cx + 8, 16, { align: 'left', color: '#7f9bd6', size: 11 });
-  txt(g, 'Achse gegen die Sonne geneigt: δ = ' + fmt(sun.dec, 2) + '°', w/2, h - 17, { size: 10.5, color: C.mut, align: 'center' });
-  txt(g, 'Sonnenwenden ±23,44° · Tagundnachtgleichen 0°', w/2, h - 5, { size: 10, color: C.dim, align: 'center' });
+  g.beginPath(); g.moveTo(cx, cy - R - (K ? 8 : 14)); g.lineTo(cx, cy + R + (K ? 8 : 14)); g.stroke(); g.setLineDash([]);
+  if (K){
+    txt(g, 'Tag', cx - 5, h - 5, { align: 'right', color: C.sun, size: 10 });
+    txt(g, 'Nacht', cx + 5, h - 5, { align: 'left', color: '#7f9bd6', size: 10 });
+    txt(g, 'δ ' + fmt(sun.dec, 1) + '°', w - 2, 12, { align: 'right', color: C.loc, size: 10, bold: true });
+  } else {
+    txt(g, 'Tag', cx - 8, 16, { align: 'right', color: C.sun, size: 11 });
+    txt(g, 'Nacht', cx + 8, 16, { align: 'left', color: '#7f9bd6', size: 11 });
+    txt(g, 'Achse gegen die Sonne geneigt: δ = ' + fmt(sun.dec, 2) + '°', w/2, h - 17, { size: 10.5, color: C.mut, align: 'center' });
+    txt(g, 'Sonnenwenden ±23,44° · Tagundnachtgleichen 0°', w/2, h - 5, { size: 10, color: C.dim, align: 'center' }); }
 }
 
 function fillOrbitKv(){
@@ -821,8 +844,8 @@ function fillOrbitKv(){
   ].map(([k, v]) => '<div><span>' + k + '</span><span>' + v + '</span></div>').join('');
   const dl = AST.dayLen(state.lat, sun.dec);
   const stateTxt = dl >= 24 ? 'Mitternachtssonne' : dl <= 0 ? 'Polarnacht' : fmt(dl, 2) + ' h Tag';
-  $('sideTxt').innerHTML = 'Der gelbe Anteil des Breitenkreises <b>φ = ' + latTxt(state.lat) + '</b> liegt im Licht: <b>' + stateTxt + '</b>. '
-    + 'Die Tag-Nacht-Grenze steht in dieser Ansicht immer senkrecht; die Achse kippt scheinbar hin und her, weil sich der Blickwinkel mit der Sonne dreht – im Raum bleibt sie fest.';
+  $('sideTxt').innerHTML = '<b>φ = ' + latTxt(state.lat) + '</b>: gelber Teil des Breitenkreises im Licht → <b>' + stateTxt + '</b>. '
+    + 'Achse zur Sonne geneigt: <b>δ = ' + fmt(sun.dec, 1) + '°</b>.';
 }
 
 /* =====================================================================
