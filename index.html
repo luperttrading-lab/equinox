@@ -156,7 +156,7 @@ summary{font-size:13px;color:var(--mut);cursor:pointer}
 <header id="hdr">
   <div class="row1">
     <h1>Equinox</h1>
-    <button class="ver" id="verBtn" type="button">v1.6</button>
+    <button class="ver" id="verBtn" type="button">v1.7</button>
     <span class="season" id="seasonTxt">–</span>
   </div>
 </header>
@@ -355,6 +355,40 @@ cos ω₀ ≤ −1 → 24 h Mitternachtssonne, ≥ +1 → 0 h Polarnacht
 φ = 0 → cos ω₀ = 0 → ω₀ = 90° → T = 12 h, an jedem Tag des Jahres</div>
     </details>
   </div>
+  <div class="card">
+    <h2>Mond: wie lange über dem Horizont <span class="r" id="moonYear">–</span></h2>
+    <canvas id="cvMoon"></canvas>
+    <div class="legend">
+      <span><i style="background:#6f93e8"></i>Mond bei φ, Durchgang für Durchgang</span>
+      <span><i style="background:var(--sun)"></i>Sonne bei φ</span>
+      <span><i style="background:rgba(232,238,249,.45)"></i>Mond am Äquator</span>
+      <span>● Vollmond · ○ Neumond</span>
+    </div>
+    <p id="moonTxt"></p>
+    <p><b>Warum 6 bis 18 Stunden – jeden Monat:</b> Der Mond läuft fast auf derselben Bahn über den Himmel wie die Sonne
+    (nur 5° daneben). Was die Sonne in einem <b>Jahr</b> durchläuft – von gut 23° nördlich des Himmelsäquators bis 23° südlich
+    und zurück –, schafft der Mond in <b>27,3 Tagen</b>. Er hat also jeden Monat einmal „Sommer“ (hoch im Norden, langer Bogen
+    über dem Horizont) und einmal „Winter“ (tief im Süden, kurzer Bogen). Seine Spanne ist derzeit sogar größer als die der
+    Sonne, weil sich die 5° Bahnneigung gerade zu den 23,4° addiert (große Mondwende um 2025, bis ±28,5°).</p>
+    <p><b>Warum am Äquator immer gleich:</b> Es gilt dieselbe Regel wie für die Sonne – dort halbiert der Horizont jede
+    Kreisbahn am Himmel, egal wie weit nördlich oder südlich der Mond gerade steht. Übrig bleiben rund 12¼ Stunden: etwas
+    mehr als 12, weil der Mond jeden Tag rund 50 Minuten später aufgeht, etwas weniger, weil er so nah ist, dass man ihn
+    von der Erdoberfläche aus ein Stück tiefer sieht.</p>
+    <p><b>Warum im Winter der Vollmond oben, im Sommer der Neumond:</b> Der Vollmond steht der Sonne genau gegenüber.
+    Steht die Sonne im Winter tief im Süden, steht der Vollmond hoch im Norden – er zieht einen langen, hohen Bogen über den
+    Nachthimmel. Im Sommer ist es umgekehrt: hohe Sonne, tiefer, kurzer Vollmond. Der Neumond steht dagegen bei der Sonne und
+    macht ihre Höhe mit – im Sommer hat er deshalb die längsten Bögen. Nur sieht man ihn nicht, weil er mit der Sonne am
+    Taghimmel steht.</p>
+    <details><summary>Rechnung</summary>
+<div class="formel">Mondort: Astronomical Almanac, niedrige Genauigkeit (≈0,3°)
+Aufgang/Untergang: Mondmitte am Horizont, von der Erdoberfläche
+aus gesehen (Parallaxe ≈ 0,95°), ohne Lichtbrechung – wie die
+Sonne in dieser App. Mit Lichtbrechung je Durchgang ≈ 10 min mehr.
+Stundenwinkel des Mondes wächst um ≈ 14,5°/h (Sonne 15°/h)
+Probe 2026: Neumond 17.02. und 12.08., Vollmond 03.03. und 28.08.
+(alle vier mit Finsternis), 352 Durchgänge in Wettenberg</div>
+    </details>
+  </div>
 </section>
 
 <!-- ============ STRAHLUNG ============ -->
@@ -408,7 +442,7 @@ Beispiel Sommersonnenwende, r ≈ 1,016 AE:
 
 <script>
 'use strict';
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 /* =====================================================================
    KERN – DOM-frei: Sonnenformeln (NOAA/Meeus-Kurzform), Tageslänge,
    Einstrahlung. Identische Sonnen-Pipeline wie Satellitenhimmel.
@@ -482,6 +516,49 @@ const AST = {
     const i = Math.floor(norm360(lam)/90);
     return { n: ['Frühling','Sommer','Herbst','Winter'][i], s: ['Herbst','Winter','Frühling','Sommer'][i] };
   }
+};
+/* Mond: Astronomical Almanac, niedrige Genauigkeit (~0,3 Grad); geprueft an den Finsternissen 2026 */
+AST.moon = function(jd){
+  const T = (jd - 2451545)/36525, s = (a,b) => Math.sin((a + b*T)*D2R), c = (a,b) => Math.cos((a + b*T)*D2R);
+  const lam = norm360(218.32 + 481267.883*T + 6.29*s(134.9,477198.85) - 1.27*s(259.2,-413335.38) + 0.66*s(235.7,890534.23)
+            + 0.21*s(269.9,954397.70) - 0.19*s(357.5,35999.05) - 0.11*s(186.6,966404.05));
+  const bet = 5.13*s(93.3,483202.03) + 0.28*s(228.2,960400.87) - 0.28*s(318.3,6003.18) - 0.17*s(217.6,-407332.20);
+  const par = 0.9508 + 0.0518*c(134.9,477198.85) + 0.0095*c(259.2,-413335.38) + 0.0078*c(235.7,890534.23) + 0.0028*c(269.9,954397.70);
+  const e = (23.439 - 0.0000004*(jd - 2451545))*D2R, l = lam*D2R, b = bet*D2R;
+  const x = Math.cos(b)*Math.cos(l), y = Math.cos(e)*Math.cos(b)*Math.sin(l) - Math.sin(e)*Math.sin(b), z = Math.sin(e)*Math.cos(b)*Math.sin(l) + Math.cos(e)*Math.sin(b);
+  return { lam, bet, par, ra: norm360(Math.atan2(y, x)*R2D), dec: Math.asin(z)*R2D, dist: 6378.14/Math.sin(par*D2R) };
+};
+/* Hoehe der Mondmitte von der Erdoberflaeche aus (Parallaxe), Grad */
+AST.moonAlt = function(jd, lat, lon){
+  const m = AST.moon(jd), gmst = norm360(280.46061837 + 360.98564736629*(jd - 2451545)), H = (gmst + lon - m.ra)*D2R, la = lat*D2R, d = m.dec*D2R;
+  const h = Math.asin(Math.sin(la)*Math.sin(d) + Math.cos(la)*Math.cos(d)*Math.cos(H))*R2D;
+  return h - m.par*Math.cos(h*D2R);
+};
+/* Alle Durchgaenge eines Jahres: Aufgang -> Untergang, Mitte und Dauer (h) */
+AST.moonPasses = function(year, lat, lon){
+  const ja = AST.jd(Date.UTC(year, 0, 1)), je = AST.jd(Date.UTC(year + 1, 0, 1)), st = 15/1440, out = [];
+  let rise = null, t = ja - 1.5, a = AST.moonAlt(t, lat, lon);
+  for (t += st; t <= je + 1.5; t += st){
+    const b = AST.moonAlt(t, lat, lon);
+    if ((a < 0) !== (b < 0)){
+      let lo = t - st, hi = t; for (let i = 0; i < 16; i++){ const m = (lo + hi)/2; if ((AST.moonAlt(m, lat, lon) < 0) === (a < 0)) lo = m; else hi = m; }
+      const x = (lo + hi)/2;
+      if (a < 0) rise = x; else if (rise !== null){ const mid = (rise + x)/2; if (mid >= ja && mid < je) out.push({ mid, h: (x - rise)*24 }); rise = null; }
+    }
+    a = b;
+  }
+  return out;
+};
+/* Neu- und Vollmonde eines Jahres */
+AST.moonPhases = function(year){
+  const ja = AST.jd(Date.UTC(year, 0, 1)), out = []; let pe = null, pf = null;
+  for (let k = 0; k <= 367*8; k++){
+    const t = ja + k/8, e = wrap180(AST.moon(t).lam - AST.sun(t).lam), f = wrap180(e - 180);
+    if (pe !== null && pe < 0 && e >= 0 && Math.abs(e) < 90) out.push({ t, voll: false });
+    if (pf !== null && pf < 0 && f >= 0 && Math.abs(f) < 90) out.push({ t, voll: true });
+    pe = e; pf = f;
+  }
+  return out;
 };
 if (typeof module !== 'undefined') module.exports = { AST, norm360, wrap180 };
 </script>
@@ -1266,6 +1343,61 @@ function drawYear(cv, fn, yMax, yTicks, unit){
 function drawDayYear(){ drawYear($('cvDayYear'), (lat, s) => AST.dayLen(lat, s.dec), 24, [0,6,12,18,24], ' h'); }
 function drawRadYear(){ drawYear($('cvRadYear'), (lat, s) => AST.insol(lat, s.dec, s.r)*0.024, 14, [0,3,6,9,12], ''); }
 
+/* Mond: Dauer ueber dem Horizont je Durchgang, dazu Sonne und Mond am Aequator */
+const MOONC = {};
+function moonData(year, lat){
+  const k = year + '|' + lat.toFixed(1);
+  if (!MOONC[k]){
+    const roh = AST.moonPasses(year, lat, LOC.lon), P = roh.filter(p => p.h <= 25);
+    /* ueber 25 h = Mond ging tagelang nicht unter; lange Luecken = ging tagelang nicht auf */
+    P.zirkum = roh.length !== P.length || P.some((p, i) => i && p.mid - P[i-1].mid > 2);
+    MOONC[k] = P;
+  }
+  return MOONC[k];
+}
+function drawMoon(){
+  const cv = $('cvMoon'), S = setup(cv, 230); if (!S) return;
+  const { g, w, h } = S, nd = AST.daysInYear(state.year), ja = AST.jd(Date.UTC(state.year, 0, 1));
+  const P = moonData(state.year, state.lat), E = moonData(state.year, 0), PH = AST.moonPhases(state.year);
+  const sunH = []; for (let d = 0; d <= nd; d += 2){ const s = AST.sun(ja + d + 0.5); sunH.push([d + 0.5, AST.dayLen(state.lat, s.dec)]); }
+  const alle = P.map(p => p.h).concat(E.map(p => p.h), sunH.map(q => q[1]));
+  let yMin = Math.min(6, Math.floor(Math.min(...alle)/3)*3), yMax = Math.max(18, Math.ceil(Math.max(...alle)/3)*3);
+  yMin = Math.max(0, yMin); yMax = Math.min(24, yMax);
+  const box = { x0: 34, y0: 30, x1: w - 8, y1: h - 18 }, yt = []; for (let v = yMin; v <= yMax; v += 3) yt.push(v);
+  axes(g, box, { xMin: 0, xMax: nd, yMin, yMax, xTicks: [], yTicks: yt.map(v => ({ v, label: v + ' h', strong: v === 12 })) });
+  xTicksMonths(g, box, 0, nd);
+  const X = d => box.x0 + d/nd*(box.x1 - box.x0), Y = v => box.y1 - (clamp(v, yMin, yMax) - yMin)/(yMax - yMin)*(box.y1 - box.y0);
+  polyline(g, E.map(p => [X(p.mid - ja), Y(p.h)]), 'rgba(232,238,249,.45)', 1.2, [4,3]);
+  polyline(g, P.map(p => [X(p.mid - ja), Y(p.h)]), '#6f93e8', 1.3);
+  polyline(g, sunH.map(([d, v]) => [X(d), Y(v)]), C.sun, 2.4);
+  /* Voll- und Neumond am naechsten Durchgang */
+  for (const ph of PH){
+    let best = null; for (const p of P) if (!best || Math.abs(p.mid - ph.t) < Math.abs(best.mid - ph.t)) best = p;
+    if (!best || Math.abs(best.mid - ph.t) > 0.8) continue;
+    g.beginPath(); g.arc(X(best.mid - ja), Y(best.h), 4, 0, 7);
+    if (ph.voll){ g.fillStyle = '#6f93e8'; g.fill(); } else { g.fillStyle = C.bg1; g.fill(); g.strokeStyle = '#6f93e8'; g.lineWidth = 1.6; g.stroke(); }
+  }
+  /* heute */
+  const jn = AST.jd(dateMs()); let pn = null; for (const p of P) if (!pn || Math.abs(p.mid - jn) < Math.abs(pn.mid - jn)) pn = p;
+  const xs = X(jn - ja), sn = AST.dayLen(state.lat, sunNow().dec);
+  g.strokeStyle = 'rgba(232,238,249,.4)'; g.setLineDash([2,3]); g.lineWidth = 1; g.beginPath(); g.moveTo(xs, box.y0); g.lineTo(xs, box.y1); g.stroke(); g.setLineDash([]);
+  if (pn){ g.beginPath(); g.arc(X(pn.mid - ja), Y(pn.h), 6, 0, 7); g.strokeStyle = '#6f93e8'; g.lineWidth = 2; g.stroke(); }
+  g.beginPath(); g.arc(xs, Y(sn), 6, 0, 7); g.strokeStyle = C.sun; g.lineWidth = 2; g.stroke();
+  const dz = x => { const m = Math.round(clamp(x, 0, 24)*60); return Math.floor(m/60) + ' h ' + pad2(m % 60); };
+  const lx = clamp(xs, box.x0 + 60, box.x1 - 60);
+  txt(g, '☾ ' + (pn ? dz(pn.h) : '–'), lx - 4, 14, { align: 'right', size: 11.5, color: '#8fb0f0', bold: true });
+  txt(g, '☀ ' + dz(sn), lx + 4, 14, { align: 'left', size: 11.5, color: C.sun, bold: true });
+  /* Text mit den Spannen */
+  const hs = P.map(p => p.h), es = E.map(p => p.h), ss = sunH.map(q => q[1]);
+  $('moonYear').textContent = state.year + ' · φ ' + latTxt(state.lat);
+  $('moonTxt').innerHTML = P.length
+    ? 'Bei <b>φ = ' + latTxt(state.lat) + '</b>: Mond <b>' + dz(Math.min(...hs)) + ' bis ' + dz(Math.max(...hs)) + '</b> – diese ganze Spanne in 27,3 Tagen. '
+      + 'Sonne ' + dz(Math.min(...ss)) + ' bis ' + dz(Math.max(...ss)) + ' – dafür braucht sie das ganze Jahr. '
+      + 'Am Äquator: Mond ' + dz(Math.min(...es)) + ' bis ' + dz(Math.max(...es)) + '. ' + P.length + ' Durchgänge.'
+      + (P.zirkum ? ' Zeitweise geht der Mond hier tagelang gar nicht unter oder nicht auf – diese Zeiten fehlen in der Kurve.' : '')
+    : 'Bei φ = ' + latTxt(state.lat) + ' geht der Mond zeitweise gar nicht auf oder unter; Durchgänge mit Auf- und Untergang gibt es nur in Teilen des Jahres.';
+}
+
 /* Einstrahlung nach Breite am Datum */
 function drawRadLat(){
   const cv = $('cvRadLat'), S = setup(cv, 210); if (!S) return;
@@ -1337,7 +1469,7 @@ function render(){
   renderHeader();
   if (state.tab === 'bahn'){ drawOrbit(); drawSide(); fillOrbitKv(); }
   else if (state.tab === 'erde'){ drawGlobeMain(); fillLocKv(); drawStrip(); }
-  else if (state.tab === 'tag'){ drawSchema(); fillSchemaTxt(); drawPolar(); drawElev(); drawHeatDay(); drawDayYear(); }
+  else if (state.tab === 'tag'){ drawSchema(); fillSchemaTxt(); drawPolar(); drawElev(); drawHeatDay(); drawDayYear(); drawMoon(); }
   else { fillRadKv(); drawRadLat(); drawHeatRad(); drawRadYear(); }
 }
 let raf = 0;
